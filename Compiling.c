@@ -3,7 +3,7 @@
 Value* resizeValues(Value* values, long size){
 	Value* newValues = (Value*)realloc(values, 2*size*sizeof(Value));
 	if(newValues == NULL){
-		printf("could not resize values!, %d", 2*size);
+		printf("could not resize values!, %ld", 2*size);
 		free(values);
 		free(newValues);
 		exit(1);
@@ -14,7 +14,7 @@ Value* resizeValues(Value* values, long size){
 OPCode* resizeOPs(OPCode* ops, long size){
 	OPCode* newOps = (OPCode*)realloc(ops, 2*size*sizeof(OPCode));
 	if(newOps == NULL){
-		printf("could not resize ops!, %d", 2*size);
+		printf("could not resize ops!, %ld", 2*size);
 		free(ops);
 		free(newOps);
 		exit(1);
@@ -177,7 +177,7 @@ void printOPS(Program* p){
 				break;
 			}
 			case REM_OP: {
-				printf("%");
+				printf("%c", '%');
 				break;
 			}
 			case EXP_OP: {
@@ -284,7 +284,7 @@ void printOPS(Program* p){
 				break;
 			}
 			default: {
-				printf("");
+				printf("Can't Print OP");
 				break;
 			}
 		}
@@ -308,7 +308,6 @@ void printProgram(Program* p){
 
 void freeOPs(OPArray* arr){
 	free(arr->ops);
-	free(arr);
 }
 
 void freeValues(ValueArray* arr){

@@ -32,7 +32,7 @@ void printOP(OPCode op){
 			break;
 		}
 		case REM_OP:{
-			printf("%");
+			printf("%c", '%');
 			break;
 		}
 		case EXP_OP:{
@@ -118,7 +118,7 @@ void printASTNode(ASTNode* node){
 			break;
 		}
 		case ASTID_NODE_TYPE:{
-			printf(node->id.id);
+			printf("%s", node->id.id);
 			break;
 		}
 		case ASTValue_NODE_TYPE:{
@@ -314,7 +314,7 @@ ASTNode* literal(Token t){
 			//change this
 			node->type = ASTValue_NODE_TYPE;
 			Value v;
-			v.type = F32_VAL;
+			v.type = STR_VAL,;
 			v.f32 = atof(t.value);
 			ASTValue val = {v};
 			node->value = val;
@@ -401,7 +401,7 @@ ASTNode* binaryOP(TokenType op, ASTNode* lhs, TokenArray* tokens){
 			binOP.op = LOE_OP;
 			break;
 		}
-		case GOE_OP_TOKEN : 	{
+		case GOE_OP_TOKEN : {
 			binOP.lhs = lhs;
 			binOP.op = GOE_OP;
 			break;
@@ -460,7 +460,9 @@ ASTNode* binaryOP(TokenType op, ASTNode* lhs, TokenArray* tokens){
 		binOP.rhs = split(tokens, getOtherfixPrecedence(op)+1);
 	}
 	n->binaryOP = binOP;
+
 	//printf("n type: %d", n->type);
+	return n;
 }
 
 ASTNode* otherfix(ASTNode* node, TokenArray* tokens){
@@ -610,14 +612,18 @@ void freeASTNode(ASTNode* node){
 		case ASTBinaryOP_NODE_TYPE :{
 			freeASTNode(node->binaryOP.lhs);
 			freeASTNode(node->binaryOP.rhs);
+			free(node->binaryOP.lhs);
+			free(node->binaryOP.rhs);
 			break;
 		}
 		case ASTUnaryOP_NODE_TYPE : {
 			freeASTNode(node->unaryOP.opperand);
+			free(node->unaryOP.opperand);
 			break;
 		}
 		case ASTCallOP_NODE_TYPE:{
 			freeASTNode(node->callOP.opperand);
+			free(node->callOP.opperand);
 			break;
 		}
 		case ASTID_NODE_TYPE:{
@@ -630,10 +636,12 @@ void freeASTNode(ASTNode* node){
 		}
 		case ASTExpression_NODE_TYPE:{
 			freeASTNode(node->expr.expr);
+			free(node->expr.expr);
 			break;
 		}
 		case ASTPrint_NODE_TYPE:{
 			freeASTNode(node->print.expr);
+			free(node->print.expr);
 			break;
 		}
 		
@@ -644,7 +652,7 @@ void freeASTNode(ASTNode* node){
 			exit(1);
 		}
 	}
-	free(node);
+	//free(node);
 }
 
 

@@ -47,11 +47,14 @@ typedef enum{
 typedef enum {
 	I32_VAL,
 	F32_VAL,
+	I_STR_VAL,
+	STR_VAL,
 	BOOL_VAL,
 	HEAP_VAL,
 } ValueType;
 
 typedef enum {
+	HEAP_I_STRING,
 	HEAP_STRING,
 } HeapType;
 

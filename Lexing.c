@@ -60,7 +60,7 @@ void printToken(Token* token){
 			break;
 		}
 		case REM_OP_TOKEN:{
-			printf("%");
+			printf("%c", '%');
 			break;
 		}
 		case EXP_OP_TOKEN:{
@@ -113,25 +113,25 @@ void printToken(Token* token){
 		}
 		case STR_VAL_TOKEN :{
 			printf("string[");
-			printf(token->value);
+			printf("%s", token->value);
 			printf("]");
 			break;
 		}
 		case I32_VAL_TOKEN:{
 			printf("i32[");
-			printf(token->value);
+			printf("%s", token->value);
 			printf("]");
 			break;
 		}
 		case F32_VAL_TOKEN:{
 			printf("f32[");
-			printf(token->value);
+			printf("%s", token->value);
 			printf("]");
 			break;
 		}
 		case ID_TOKEN: {
 			printf("ID[");
-			printf(token->value);
+			printf("%s", token->value);
 			printf("]");
 			break;
 		}
@@ -144,6 +144,10 @@ void printToken(Token* token){
 			break;
 		}
 		case PRINT_TOKEN:{
+			printf("print");
+			break;
+		}
+		case LET_TOKEN:{
 			printf("print");
 			break;
 		}
@@ -198,7 +202,7 @@ bool matchAndDelimited(char* text, const char* str, int strSize){
 Token* resizeTokens(Token* tokens, long size){
 	Token* newTokens = (Token*)realloc(tokens, 2*size*sizeof(Token));
 	if(newTokens == NULL){
-		printf("could not resize tokens!, %d", 2*size);
+		printf("could not resize tokens!, %ld", 2*size);
 		free(tokens);
 		free(newTokens);
 		exit(1);
@@ -264,6 +268,10 @@ TokenArray tokenize(char* text, long textSize){
 				text++;
 				break;
 			}
+			case '\r':{
+				text++;
+				break;
+			}
 			case '+':{
 				text++;
 				emitToken(PLUS_OP_TOKEN, NULL, 0, &tokenArr);
@@ -315,9 +323,14 @@ TokenArray tokenize(char* text, long textSize){
 				break;
 			}
 			case '=':{
-				if(match(text, "==", 2)){
+				if(matchAndDelimited(text, "==", 2)){
 					text+=2;
 					emitToken(EQUAL_OP_TOKEN, NULL, 0, &tokenArr);
+					break;
+				}
+				else{
+					text++;
+					emitToken(ASS_TOKEN, NULL, 0, &tokenArr);
 					break;
 				}
 			}
@@ -401,6 +414,17 @@ TokenArray tokenize(char* text, long textSize){
 					break;
 				}
 			}
+			case 'l' :{
+				if(matchAndDelimited(text, "let", 3)){
+					text+=4;
+					emitToken(LET_TOKEN), NULL, 0, &tokenArr);
+					break;
+				}
+				else{
+					text += lexID(&tokenArr, text);
+					break;
+				}
+			}		
 			case 't' :{
 				if(matchAndDelimited(text, "true", 4)){
 					text+=4;
@@ -435,7 +459,31 @@ TokenArray tokenize(char* text, long textSize){
 				text++;//"
 				emitToken(STR_VAL_TOKEN, str, chars, &tokenArr);
 				break;
-			}		
+			}	
+			case '\'' :{
+				text++;//"
+				char* str = (char*)malloc(sizeof(char));
+				long cappacity = 1;
+				long chars = 0;
+				while(*text != '\''){
+					str[chars] = *text;
+					chars++;
+					text++;
+					if(chars == cappacity){
+						str = resizeString(str, cappacity);
+						cappacity *= 2;
+					}
+					if(*text == '\0'){
+						printf("Non-terminating string; missing a: \" ");
+						exit(1);
+					}
+				}
+				str[chars] = '\0';
+				chars++;
+				text++;//"
+				emitToken(IMUT_STR_VAL_TOKEN, str, chars, &tokenArr);
+				break;
+			}					
 			default : {
 				if(isDigit(*text)){
 					long cappacity = 1;
@@ -479,7 +527,7 @@ TokenArray tokenize(char* text, long textSize){
 					emitToken(ID_TOKEN, id, chars, &tokenArr);
 				}
 				else{
-					printf("unlexable token");
+					printf("unlexable token\n");
 					exit(1);
 				}
 			}
@@ -555,8 +603,5 @@ void freeToken(Token* token){
 }
 
 void freeTokens(TokenArray* tokens){
-	for(int i = 0; i < tokens->tokenCount; i++){
-		freeToken(&tokens->tokens[i]);
-	}
-	free(tokens);
+	free(tokens->tokens);
 }

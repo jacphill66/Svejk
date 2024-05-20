@@ -3,17 +3,14 @@
 
 int main(){
 	//printf("hello world\n");
-	TokenArray tokens = lex("arithmeticTest.txt");
+	TokenArray tokens = lex("arithmeticTest.txt");	
 	printTokens(&tokens);	
 	AST ast = parse(&tokens);
 	freeTokens(&tokens);
 	printAST(&ast);
-
-
 	Program p = compile(&ast);
 	freeAST(&ast);
 	printProgram(&p);
-	
 	VM vm;
 	
 	vm.p = p;

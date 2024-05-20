@@ -5,4 +5,10 @@
 
 HeapValue* allocateHeapValue(size_t size, HeapType type);
 
+
+typedef struct {
+	
+	
+} HeapObject;
+
 #endif

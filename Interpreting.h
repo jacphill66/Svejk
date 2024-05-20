@@ -13,6 +13,11 @@ typedef struct {
 		OPCode* ip;
 		Value stack[STACK_MAX];
 		Value* stackPtr;
+		//CallFrame[X] callStack;
+		
+		//CodeSegment data;
+		//DataSegment datasegment;
+		//HeapObject* heap; 
 } VM;
 
 void initVM(VM* vm);
