@@ -9,10 +9,12 @@
 
 
 typedef struct {
-		Program p;
+		Program* p;
 		OPCode* ip;
 		Value stack[STACK_MAX];
 		Value* stackPtr;
+		Value* globalVariables;
+		char** strings; 
 		//CallFrame[X] callStack;
 		
 		//CodeSegment data;
@@ -20,7 +22,7 @@ typedef struct {
 		//HeapObject* heap; 
 } VM;
 
-void initVM(VM* vm);
+VM* initVM(Program* p);
 void execute(VM* vm);
 
 #endif

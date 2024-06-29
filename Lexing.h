@@ -38,11 +38,26 @@ typedef enum{
 	
 	LPAREN_OP_TOKEN,
 	RPAREN_OP_TOKEN,
+	LC_BRACKET_TOKEN,
+	RC_BRACKET_TOKEN,
+	LS_BRACKET_TOKEN,
+	RS_BRACKET_TOKEN,
 	
 	PRINT_TOKEN,
+	FOR_TOKEN,
+	IN_TOKEN,
 	LET_TOKEN,
+	
 	COLON_TOKEN,
 	ASS_TOKEN,
+	COMMA_TOKEN,
+	
+	I32_TOKEN,
+	F32_TOKEN, 
+	STR_TOKEN,
+	BOOL_TOKEN,
+	
+	COMMENT_TOKEN,
 	
 	END_LINE_TOKEN,
 	
@@ -54,6 +69,7 @@ typedef struct {
 	TokenType type;
 	char* value;
 	long size;
+	long line;
 } Token;
 
 typedef struct {
@@ -62,8 +78,10 @@ typedef struct {
 	long tokenCount;
 } TokenArray;
 
-TokenArray lex(char* path);
+TokenArray* initTokenArray();
+void lex(TokenArray* tokenArr, char* path);
 void printTokens(TokenArray* arr);
 void freeTokens(TokenArray* tokens);
+void printToken(Token* t);
 
 #endif

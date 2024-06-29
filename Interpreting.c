@@ -163,22 +163,25 @@
 	++vm->stackPtr; \
 
 #define PUSH_VAL() \
-	*vm->stackPtr = vm->p.values.values[*vm->ip];\
+	*vm->stackPtr = vm->p->values->values[*vm->ip];\
 	++vm->stackPtr; \
 
 int intFact(int n){
-	if(n == 2){
-		return 2;
-	}
+	if(n == 0) return 1;
 	return n * intFact(n-1);
 }
 
-void initVM(VM* vm){
-	vm-> ip = vm->p.ops.ops;
+VM* initVM(Program* p){
+	VM* vm = (VM*)malloc(sizeof(VM));
+	vm->p = p;
+	vm->ip = p->ops->ops;
 	vm->stackPtr = vm->stack;
+	vm->globalVariables = (Value*)malloc(sizeof(Value)*p->globalCount);
+	vm->strings = p->strings;
+	return vm;
 }
 
-void printValue(Value* v){
+void printValue(VM* vm, Value* v){
 	if(v->type == I32_VAL){
 		printf("%d", v->i32);
 	}
@@ -192,6 +195,9 @@ void printValue(Value* v){
 		else{
 			printf("false");
 		}
+	}
+	else if(v->type == STR_VAL){
+		printf("%s", vm->strings[v->i32]);
 	}
 	else{
 		printf("\n%d\n", v->type);
@@ -292,10 +298,6 @@ void execute(VM* vm){
 				//later
 				break;
 			}
-			case ID_OP: {
-				//later
-				break;
-			}
 			case VAL_OP: {
 				vm->ip++;
 				PUSH_VAL();
@@ -307,7 +309,7 @@ void execute(VM* vm){
 				return;
 			}
 			case PRINT_OP:{
-				printValue(vm->stackPtr-1);
+				printValue(vm, vm->stackPtr-1);
 				printf("\n");
 				vm->ip+=1;
 				break;
@@ -317,9 +319,46 @@ void execute(VM* vm){
 				vm->ip+=1;
 				break;
 			}
+			case SET_GLOBAL_VAR_OP:{
+				vm->ip++;
+				vm->stackPtr--;
+				vm->globalVariables[*vm->ip++] = *vm->stackPtr;
+				//++vm->stackPtr;
+				break;
+			}
+			case GET_GLOBAL_VAR_OP:{
+				vm->ip++;
+				*vm->stackPtr = vm->globalVariables[*vm->ip++];
+				++vm->stackPtr;
+				break;
+			}
+			case SET_LOCAL_VAR_OP:{
+				vm->ip++;
+				vm->stackPtr--;
+				vm->stack[*vm->ip++] = *vm->stackPtr;
+				//++vm->stackPtr;				
+				break;
+			}
+			case GET_LOCAL_VAR_OP:{
+				vm->ip++;
+				*vm->stackPtr = vm->stack[*vm->ip++];
+				++vm->stackPtr;				
+				break;
+			}
+			case STR_VAL_OP:{
+				vm->ip++;
+				vm->stackPtr->i32 = *vm->ip++;
+				vm->stackPtr->type = STR_VAL;
+				++vm->stackPtr;
+				break;
+			}
 			default: {
 				break;
 			}
 		}
 	}
 }
+//Might be an error with incrementing and decrementing stack ptr after getting and setting variables
+
+//Fix compiler and interpreter, organize files
+//fix strings, and variables

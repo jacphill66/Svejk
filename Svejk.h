@@ -7,6 +7,10 @@
 #include "Parsing.h"
 #include "Compiling.h"
 #include "Interpreting.h"
+#include "RedBlackTree.h"
+#include <time.h>
+#include "Table.h"
+#include "Analyzer.h"
 
 int main();
 

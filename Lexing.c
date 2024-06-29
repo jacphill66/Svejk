@@ -143,12 +143,60 @@ void printToken(Token* token){
 			printf(")");
 			break;
 		}
+		case LC_BRACKET_TOKEN:{
+			printf("{");
+			break;
+		}
+		case RC_BRACKET_TOKEN:{
+			printf("}");
+			break;
+		}
+		case LS_BRACKET_TOKEN:{
+			printf("[");
+			break;
+		}
+		case RS_BRACKET_TOKEN:{
+			printf("]");
+			break;
+		}
 		case PRINT_TOKEN:{
 			printf("print");
 			break;
 		}
+		case ASS_TOKEN:{
+			printf("=");
+			break;
+		}
 		case LET_TOKEN:{
-			printf("print");
+			printf("let");
+			break;
+		}
+		case FOR_TOKEN:{
+			printf("for");
+			break;
+		}
+		case IN_TOKEN:{
+			printf("in");
+			break;
+		}
+		case COLON_TOKEN:{
+			printf(":");
+			break;
+		}
+		case I32_TOKEN:{
+			printf("i32");
+			break;
+		}
+		case F32_TOKEN:{
+			printf("f32");
+			break;
+		}
+		case STR_TOKEN:{
+			printf("str");
+			break;
+		}
+		case COMMA_TOKEN:{
+			printf(",");
 			break;
 		}
 		case END_LINE_TOKEN:{
@@ -174,8 +222,8 @@ void printTokens(TokenArray* arr){
 	printf("\n\n");
 }
 
-Token newToken(TokenType type, char* value, long size){
-	Token t = {type, value, size};
+Token newToken(TokenType type, char* value, long size, long lineNumber){
+	Token t = {type, value, size, lineNumber};
 	return t;
 }
 
@@ -210,8 +258,8 @@ Token* resizeTokens(Token* tokens, long size){
 	return newTokens;
 }
 
-void emitToken(TokenType type, char* value, long size, TokenArray* tokenArr){
-	tokenArr->tokens[tokenArr->tokenCount] = newToken(type, value, size);
+void emitToken(TokenType type, char* value, long size, TokenArray* tokenArr, long line){
+	tokenArr->tokens[tokenArr->tokenCount] = newToken(type, value, size, line);
 	tokenArr->tokenCount++;
 	if(tokenArr->tokenCount == tokenArr->cappacity){
 		tokenArr->tokens = resizeTokens(tokenArr->tokens, tokenArr->cappacity);
@@ -230,7 +278,7 @@ char* resizeString(char* str, long length){
 	return newStr;
 }
 
-long lexID(TokenArray* tokenArr, char* text){
+long lexID(TokenArray* tokenArr, char* text, long lineNumber){
 	char* id = (char*)malloc(sizeof(char));
 	long cappacity = 1;
 	long chars = 0;
@@ -245,15 +293,27 @@ long lexID(TokenArray* tokenArr, char* text){
 	}
 	id[chars] = '\0';
 	chars++;
-	emitToken(ID_TOKEN, id, chars, tokenArr);
+	emitToken(ID_TOKEN, id, chars, tokenArr, lineNumber);
 	return chars-1;
 }
 
-TokenArray tokenize(char* text, long textSize){
-	Token* tokens = (Token*)malloc(sizeof(Token));
+TokenArray* initTokenArray(){
+	TokenArray* arr = (TokenArray*)malloc(sizeof(TokenArray));
+	arr->tokens = (Token*)malloc(sizeof(Token));
+	arr->cappacity = 1;
+	arr->tokenCount = 0;
+	return arr;
+}
+
+void tokenize(TokenArray* tokenArr, char* text, long textSize){
+	long lineNumber = 1;
+	//printf("here");
+	//exit(1);
+	/*Token* tokens = (Token*)malloc(sizeof(Token));
 	long cappacity = 1;
 	long numberOfTokens = 0;
-	TokenArray tokenArr = {tokens, cappacity, numberOfTokens};
+	TokenArray tokenArr = {tokens, cappacity, numberOfTokens};*/
+	//Token* tokens = tokenArr->tokens;
 	while(*text != '\0'){
 		switch(*text){
 			case ' ':{
@@ -265,6 +325,8 @@ TokenArray tokenize(char* text, long textSize){
 				break;
 			}
 			case '\n':{
+				//emitToken(END_LINE_TOKEN, NULL, 0, tokenArr, lineNumber);
+				lineNumber++;
 				text++;
 				break;
 			}
@@ -274,120 +336,178 @@ TokenArray tokenize(char* text, long textSize){
 			}
 			case '+':{
 				text++;
-				emitToken(PLUS_OP_TOKEN, NULL, 0, &tokenArr);
+				emitToken(PLUS_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
 				break;
 			}
 			case '-':{
 				text++;
-				emitToken(SUB_OP_TOKEN, NULL, 0, &tokenArr);
+				emitToken(SUB_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
 				break;
 			}
 			case '*':{
 				text++;
-				emitToken(MULT_OP_TOKEN, NULL, 0, &tokenArr);
+				emitToken(MULT_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
 				break;
 			}
 			case '/':{
 				text++;
-				emitToken(DIV_OP_TOKEN, NULL, 0, &tokenArr);
+				if(*text == '/'){
+					while((*text != '\n') && (*text != '\0')){
+						text++;
+					}
+				}
+				else{
+					emitToken(DIV_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
+				}
 				break;
 			}
 			case '%':{
 				text++;
-				emitToken(REM_OP_TOKEN, NULL, 0, &tokenArr);
+				emitToken(REM_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
 				break;
 			}
 			case '^':{
 				text++;
-				emitToken(EXP_OP_TOKEN, NULL, 0, &tokenArr);
+				emitToken(EXP_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
 				break;
 			}
 			case '!':{
 				text++;
-				emitToken(FACT_OP_TOKEN, NULL, 0, &tokenArr);
+				emitToken(FACT_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
+				break;
+			}
+			case ',':{
+				text++;
+				emitToken(COMMA_TOKEN, NULL, 0, tokenArr, lineNumber);
 				break;
 			}
 			case '(':{
 				text++;
-				emitToken(LPAREN_OP_TOKEN, NULL, 0, &tokenArr);
+				emitToken(LPAREN_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
 				break;
 			}
 			case ')':{
 				text++;
-				emitToken(RPAREN_OP_TOKEN, NULL, 0, &tokenArr);
+				emitToken(RPAREN_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
+				break;
+			}
+			case '{':{
+				text++;
+				emitToken(LC_BRACKET_TOKEN, NULL, 0, tokenArr, lineNumber);
+				break;
+			}
+			case '}':{
+				text++;
+				emitToken(RC_BRACKET_TOKEN, NULL, 0, tokenArr, lineNumber);
+				break;
+			}
+			case '[':{
+				text++;
+				emitToken(LS_BRACKET_TOKEN, NULL, 0, tokenArr, lineNumber);
+				break;
+			}
+			case ']':{
+				text++;
+				emitToken(RS_BRACKET_TOKEN, NULL, 0, tokenArr, lineNumber);
 				break;
 			}
 			case ';':{
 				text++;
-				emitToken(END_LINE_TOKEN, NULL, 0, &tokenArr);
+				emitToken(END_LINE_TOKEN, NULL, 0, tokenArr, lineNumber);
+				break;
+			}
+			case ':':{
+				text++;
+				emitToken(COLON_TOKEN, NULL, 0, tokenArr, lineNumber);
 				break;
 			}
 			case '=':{
 				if(matchAndDelimited(text, "==", 2)){
 					text+=2;
-					emitToken(EQUAL_OP_TOKEN, NULL, 0, &tokenArr);
+					emitToken(EQUAL_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
 					break;
 				}
 				else{
 					text++;
-					emitToken(ASS_TOKEN, NULL, 0, &tokenArr);
+					emitToken(ASS_TOKEN, NULL, 0, tokenArr, lineNumber);
 					break;
 				}
 			}
 			case '<':{
 				if(matchAndDelimited(text, "<=", 2)){
 					text+=2;
-					emitToken(LOE_OP_TOKEN, NULL, 0, &tokenArr);
+					emitToken(LOE_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
 					break;
 				}
 				else{
 					text++;
-					emitToken(LESS_OP_TOKEN, NULL, 0, &tokenArr);
+					emitToken(LESS_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
 					break;
 				}
 			}
 			case '>':{
 				if(matchAndDelimited(text, ">=", 2)){
 					text+=2;
-					emitToken(GOE_OP_TOKEN, NULL, 0, &tokenArr);
+					emitToken(GOE_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
 					break;
 				}
 				else{
 					text++;
-					emitToken(GREATER_OP_TOKEN, NULL, 0, &tokenArr);
+					emitToken(GREATER_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
 					break;
 				}
 			}	
 			case 'a' :{
 				if(matchAndDelimited(text, "and", 3)){
 					text+=3;
-					emitToken(AND_OP_TOKEN, NULL, 0, &tokenArr);
+					emitToken(AND_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
 					break;
 				}
 				else{
-					text += lexID(&tokenArr, text);
+					text += lexID(tokenArr, text, lineNumber);
 					break;
 				}
 			}
-			case 'f' :{
-				if(matchAndDelimited(text, "false", 4)){
+			case 'b':{
+				if(matchAndDelimited(text, "bool", 4)){
 					text+=4;
-					emitToken(FALSE_VAL_TOKEN, NULL, 0, &tokenArr);
+					emitToken(BOOL_TOKEN, NULL, 0, tokenArr, lineNumber);
 					break;
 				}
 				else{
-					text += lexID(&tokenArr, text);
+					text += lexID(tokenArr, text, lineNumber);
+					break;
+				}				
+			}
+			case 'f' :{
+				if(matchAndDelimited(text, "false", 5)){
+					text+=5;
+					emitToken(FALSE_VAL_TOKEN, NULL, 0, tokenArr, lineNumber);
+					break;
+				}
+				else if(matchAndDelimited(text, "f32", 3)){
+					text+=3;
+					emitToken(F32_TOKEN, NULL, 0, tokenArr, lineNumber);
+					break;
+				}
+				else if(matchAndDelimited(text, "for", 3)){
+					text+=3;
+					emitToken(FOR_TOKEN, NULL, 0, tokenArr, lineNumber);
+					break;
+				}
+				else{
+					text += lexID(tokenArr, text, lineNumber);
 					break;
 				}
 			}
 			case 'n' :{
 				if(matchAndDelimited(text, "not", 3)){
 					text+=3;
-					emitToken(NOT_OP_TOKEN, NULL, 0, &tokenArr);
+					emitToken(NOT_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
 					break;
 				}
 				else{
-					text += lexID(&tokenArr, text);
+					text += lexID(tokenArr, text, lineNumber);
 					break;
 				}
 				
@@ -395,47 +515,74 @@ TokenArray tokenize(char* text, long textSize){
 			case 'o' :{
 				if(matchAndDelimited(text, "or", 2)){
 					text+=2;
-					emitToken(OR_OP_TOKEN, NULL, 0, &tokenArr);
+					emitToken(OR_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
 					break;
 				}
 				else{
-					text += lexID(&tokenArr, text);
+					text += lexID(tokenArr, text, lineNumber);
 					break;
 				}
 			}
 			case 'p' :{
 				if(matchAndDelimited(text, "print", 5)){
 					text+=5;
-					emitToken(PRINT_TOKEN, NULL, 0, &tokenArr);
+					emitToken(PRINT_TOKEN, NULL, 0, tokenArr, lineNumber);
 					break;
 				}
 				else{
-					text += lexID(&tokenArr, text);
+					text += lexID(tokenArr, text, lineNumber);
 					break;
 				}
 			}
 			case 'l' :{
 				if(matchAndDelimited(text, "let", 3)){
-					text+=4;
-					emitToken(LET_TOKEN), NULL, 0, &tokenArr);
+					text+=3;
+					emitToken(LET_TOKEN, NULL, 0, tokenArr, lineNumber);
 					break;
 				}
 				else{
-					text += lexID(&tokenArr, text);
+					text += lexID(tokenArr, text, lineNumber);
 					break;
 				}
 			}		
 			case 't' :{
 				if(matchAndDelimited(text, "true", 4)){
 					text+=4;
-					emitToken(TRUE_VAL_TOKEN, NULL, 0, &tokenArr);
+					emitToken(TRUE_VAL_TOKEN, NULL, 0, tokenArr, lineNumber);
 					break;
 				}
 				else{
-					text += lexID(&tokenArr, text);
+					text += lexID(tokenArr, text, lineNumber);
 					break;
 				}
 			}			
+			case 'i' :{
+				if(matchAndDelimited(text, "i32", 3)){
+					text+=3;
+					emitToken(I32_TOKEN, NULL, 0, tokenArr, lineNumber);
+					break;
+				}
+				else if(matchAndDelimited(text, "in", 2)){
+					text+=2;
+					emitToken(IN_TOKEN, NULL, 0, tokenArr, lineNumber);
+					break;
+				}
+				else{
+					text += lexID(tokenArr, text, lineNumber);
+					break;
+				}
+			}	
+			case 's' :{
+				if(matchAndDelimited(text, "str", 3)){
+					text+=3;
+					emitToken(STR_TOKEN, NULL, 0, tokenArr, lineNumber);
+					break;
+				}
+				else{
+					text += lexID(tokenArr, text, lineNumber);
+					break;
+				}
+			}
 			case '\"' :{
 				text++;//"
 				char* str = (char*)malloc(sizeof(char));
@@ -457,7 +604,7 @@ TokenArray tokenize(char* text, long textSize){
 				str[chars] = '\0';
 				chars++;
 				text++;//"
-				emitToken(STR_VAL_TOKEN, str, chars, &tokenArr);
+				emitToken(STR_VAL_TOKEN, str, chars, tokenArr, lineNumber);
 				break;
 			}	
 			case '\'' :{
@@ -481,9 +628,9 @@ TokenArray tokenize(char* text, long textSize){
 				str[chars] = '\0';
 				chars++;
 				text++;//"
-				emitToken(IMUT_STR_VAL_TOKEN, str, chars, &tokenArr);
+				emitToken(IMUT_STR_VAL_TOKEN, str, chars, tokenArr, lineNumber);
 				break;
-			}					
+			}
 			default : {
 				if(isDigit(*text)){
 					long cappacity = 1;
@@ -503,10 +650,10 @@ TokenArray tokenize(char* text, long textSize){
 					num[digits] = '\0';
 					digits++;
 					if(numOfDots > 0){
-						emitToken(F32_VAL_TOKEN, num, digits, &tokenArr);
+						emitToken(F32_VAL_TOKEN, num, digits, tokenArr, lineNumber);
 					}
 					else{
-						emitToken(I32_VAL_TOKEN, num, digits, &tokenArr);
+						emitToken(I32_VAL_TOKEN, num, digits, tokenArr, lineNumber);
 					}
 				}
 				else if(isAl(*text)){
@@ -524,17 +671,21 @@ TokenArray tokenize(char* text, long textSize){
 					}
 					id[chars] = '\0';
 					chars++;
-					emitToken(ID_TOKEN, id, chars, &tokenArr);
+					emitToken(ID_TOKEN, id, chars, tokenArr, lineNumber);
 				}
 				else{
 					printf("unlexable token\n");
+					printf("x");
 					exit(1);
 				}
 			}
 		}
 	}
-	emitToken(END_TOKEN, NULL, 0, &tokenArr);
-	return tokenArr;
+	//printToken(&(tokenArr->tokens[0]));
+
+	//tokenArr->tokens = tokens;
+	//printToken(&(tokenArr->tokens[0]));
+	emitToken(END_TOKEN, NULL, 0, tokenArr, lineNumber);
 }
 
 //https://stackoverflow.com/questions/2029103/correct-way-to-read-a-text-file-into-a-buffer-in-c
@@ -584,24 +735,21 @@ long getSizeOfFile(const char *filename) {
     return file_size;
 }
 
-TokenArray lex(char * path){
+void lex(TokenArray* tokens, char * path){
 	/*FILE* file = getFileToRead(path);
 	long fileSize = getFileSize(file);
 	printf("%d", fileSize);
 	char* buffer = fillBuffer(file, fileSize);*/
 	long fileSize = getSizeOfFile(path);
 	char* buffer = readFile(path);
-	TokenArray arr = tokenize(buffer, fileSize);
+	tokenize(tokens, buffer, fileSize);
 	//fclose(file);
 	free(buffer);
-	return arr;
-}
-
-void freeToken(Token* token){
-	free(token->value);
-	free(token);
 }
 
 void freeTokens(TokenArray* tokens){
+	//Values are used by the parser - maybe copy them?
+	//for(int i = 0; i < tokens->tokenCount; i++) if(tokens->tokens[i].value != NULL) free(tokens->tokens[i].value);
 	free(tokens->tokens);
+	free(tokens);
 }

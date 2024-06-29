@@ -1,0 +1,17 @@
+print "apples";
+print "peaches";
+print "pumpkin pie";
+
+let x:str = "apples";
+let y:str = "peaches";
+let z:str = "pumpkin pie";
+
+print x;
+print y;
+print z;
+
+x = y;
+z = x;
+print x;
+print z;
+print y;

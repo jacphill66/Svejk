@@ -1,0 +1,18 @@
+let r:str = "apples";
+let q:str = "apples";
+let s:str = "peaches";
+let z:bool = true and true or false;
+let f:f32 = 1.2 + 1.0;
+print r;
+print q;
+print s;
+print z;
+print f;
+let x:i32 = 6;
+
+{{{{{{{{{{{{
+	print x;
+	print s;
+}}}}}}}}}}}}
+print x;
+print z;

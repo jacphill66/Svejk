@@ -1,23 +1,50 @@
 #include "Svejk.h"
 
 
+char randomCharacter(char charArr[]){
+	srand(time(NULL));
+    int index = rand() % 62;
+	return charArr[index];
+}
+
+
 int main(){
-	//printf("hello world\n");
-	TokenArray tokens = lex("arithmeticTest.txt");	
-	printTokens(&tokens);	
-	AST ast = parse(&tokens);
-	freeTokens(&tokens);
-	printAST(&ast);
-	Program p = compile(&ast);
-	freeAST(&ast);
-	printProgram(&p);
-	VM vm;
-	
-	vm.p = p;
-	initVM(&vm);
-	execute(&vm);
-	//freeProgram(&p);
-	
+	TokenArray* tokens = initTokenArray(tokens);
+	char* arithmeticTest = "tests/Arithmetic Test.txt";
+	char* stringTest = "tests/string Test.txt";
+	char* globalVariableTest = "tests/Global Variables Test.txt";
+	char* localVariableTest = "tests/Local Variables Test.txt";
+	char* variablesTest = "tests/Variables Test.txt";
+	char* errorTest = "tests/Errors Test.txt";
+	char* inferenceTest = "tests/Inference Test.txt";
+	char* forTest = "tests/for Test.txt";
+	lex(tokens, forTest);
+	printTokens(tokens);		
+	Parser* parser = newParser();
+	parse(parser, tokens);
+	freeTokens(tokens);
+	printAST(parser->ast);
+	exit(1);
+	Analyzer* analyzer = newAnalyzer(parser->globalCount);
+	analyze(analyzer, parser->ast);
+	printErrors(analyzer->errors);
+	freeAnalyzer(analyzer);
+	exit(1);
+	Program* p = newProgram(parser->stringCount);
+	compile(p, parser->ast);
+	freeParser(parser);
+	printProgram(p);
+
+	//freeProgram(p);
+	//exit(1);
+	VM* vm = initVM(p);
+	execute(vm);
+
+	//free(&p->ops);
+	//free(&p->values);
+	freeProgram(p);
+	printf("completed\n");
+	exit(1);
 	/*
 	typedef enum {
 	EQUAL_PREC,
@@ -61,3 +88,5 @@ int main(){
 	*/
 	return 0;
 }
+//Free Identifiers?
+//check and advance in parser

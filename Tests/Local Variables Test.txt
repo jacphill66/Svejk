@@ -1,0 +1,29 @@
+
+
+{}
+{{{{}}}}
+{{{{{{{{{{{{{{{{{{}}}}}}}}}}}}}}}}}}
+
+{
+	let x:i32 = 2;
+	print x;
+	x = 1;
+	print x;
+	{
+		x = 2;
+		print x;
+		let x:f32 = 10.0;
+		print x;
+		x = 11.0;
+		print x;
+	}
+	print x;
+	x = 3;
+	print x;
+}
+
+{{{{{{}}}}}}
+
+{{{{{{ let x:i32 = 100; print x; x = 1; print x; print x; print x; print x; print x; print x;}}}}}}
+
+{}{}{}{}{}{}

@@ -9,7 +9,7 @@ Value* resizeValues(Value* values, long size){
 		exit(1);
 	}
 	return newValues;
-}
+}//`
 
 OPCode* resizeOPs(OPCode* ops, long size){
 	OPCode* newOps = (OPCode*)realloc(ops, 2*size*sizeof(OPCode));
@@ -41,12 +41,22 @@ void emitValue(ValueArray* values, Value v){
 	}
 }
 
-Program initProgram(){
+Program* newProgram(int stringCount){
+	Program* p = (Program*)malloc(sizeof(Program));
 	OPCode* ops = (OPCode*)malloc(sizeof(OPCode));
-	OPArray o = {ops, 1, 0};
+	OPArray* o = malloc(sizeof(OPArray));
+	o->ops = ops;
+	o->cappacity = 1;
+    o->opCount = 0;
 	Value* values = (Value*)malloc(sizeof(Value));
-	ValueArray v = {values, 1, 0};
-	Program p = {v, o};
+	ValueArray* v = (ValueArray*)malloc(sizeof(ValueArray));
+	v->values = values;
+	v->cappacity = 1;
+	v->valueCount = 0;
+	//Program p = {v, o};
+	p->values = v;
+	p->ops = o;
+	p->strings = (char**)malloc(sizeof(char*)*stringCount);
 	return p;
 }
 
@@ -54,39 +64,85 @@ void compileASTCallNode(ASTCallOP* node, Program* p){
 	//fill in later
 }
 
-void compileASTIDNode(ASTID* node, Program* p){
+void compileASTIDNode(Program* p){
 	//fill in later
 }
 
 void compileASTBinaryNode(ASTBinaryOP* node, Program* p){
 	compileASTNode(node->lhs, p);
 	compileASTNode(node->rhs, p);
-	emitOP(&p->ops, node->op);
+	emitOP(p->ops, node->op);
 }
 
 void compileASTUnaryNode(ASTUnaryOP* node, Program* p){
 	compileASTNode(node->opperand, p);
-	emitOP(&p->ops, node->op);
+	emitOP(p->ops, node->op);
 }
 
 void compileASTValueNode(ASTValue* value, Program* p){
 	//printf("\n A-Type: %d\n", value->v.type);
 	//exit(1);
-	emitValue(&p->values, value->v);
-	emitOP(&p->ops, VAL_OP);
+	emitValue(p->values, value->v);
+	emitOP(p->ops, VAL_OP);
 	//turn the int into 4 bytes and emit them
-	emitOP(&p->ops, p->values.valueCount-1);
+	emitOP(p->ops, p->values->valueCount-1);
 }
 
 void compileASTExpressionNode(ASTExpression* expr, Program* p){
 	compileASTNode(expr->expr, p);
-	emitOP(&p->ops, POP_OP);
+	emitOP(p->ops, POP_OP);
 }
 
 void compileASTPrint(ASTPrint* print, Program* p){
 	compileASTNode(print->expr, p);
-	emitOP(&p->ops, PRINT_OP);
-	emitOP(&p->ops, POP_OP);
+	emitOP(p->ops, PRINT_OP);
+	emitOP(p->ops, POP_OP);
+}
+
+void compileASTGlobalVariable(ASTGlobalVariable* var, Program* p){
+	compileASTNode(var->expr, p);
+	emitOP(p->ops, SET_GLOBAL_VAR_OP);
+	emitOP(p->ops, var->index);
+	//emitOP(p->ops, POP_OP);//maybe, worked with it????
+}
+
+void compileASTGlobalReference(ASTGlobalID* id, Program* p){
+	emitOP(p->ops, GET_GLOBAL_VAR_OP);
+	emitOP(p->ops, id->index);
+}
+
+void compileASTLocalVariable(ASTLocalVariable* var, Program* p){
+	compileASTNode(var->expr, p);
+}
+
+void compileASTLocalReference(ASTLocalID* id, Program* p){
+	emitOP(p->ops, GET_LOCAL_VAR_OP);
+	emitOP(p->ops, id->index);
+}
+
+void compileASTBlock(ASTBlock* block, Program* p){
+	for(int i = 0; i < block->numberOfNodes; i++) compileASTNode(&block->nodes[i], p);
+	for(int i = 0; i < block->variableCount; i++) emitOP(p->ops, POP_OP);
+}
+
+void compileASTLocalAssignment(ASTLocalAssignment* ass, Program* p){
+	compileASTNode(ass->expr);
+	emitOP(p->ops, SET_LOCAL_VAR_OP);
+	emitOP(p->ops, ass->offset);
+	//printf("INDEX: %ld\n", ass->offset);
+}
+
+void compileASTGlobalAssignment(ASTGlobalAssignment* ass, Program* p){
+	compileASTNode(ass->expr);
+	emitOP(p->ops, SET_GLOBAL_VAR_OP);
+	emitOP(p->ops, ass->index);	
+	//printf("INDEX: %ld\n", ass->index);
+}
+
+void compileASTString(ASTString* str, Program* p){
+	emitOP(p->ops, STR_VAL_OP);
+	emitOP(p->ops, str->index);
+	p->strings[str->index] = str->str;
 }
 
 void compileASTNode(ASTNode* node, Program* p){
@@ -111,16 +167,48 @@ void compileASTNode(ASTNode* node, Program* p){
 			compileASTCallNode(&node->callOP, p);
 			break;
 		}
-		case ASTID_NODE_TYPE:{
-			compileASTIDNode(&node->id, p);
-			break;
-		}
+		//case ASTID_NODE_TYPE:{
+			//compileASTIDNode(node->id, p);
+		//	break;
+		//}
 		case ASTValue_NODE_TYPE:{
 			compileASTValueNode(&node->value, p);
 			break;
 		}
+		case ASTGlobalVariable_NODE_TYPE:{
+			compileASTGlobalVariable(&node->globalVar, p);
+			break;
+		}
+		case ASTGlobalID_NODE_TYPE:{
+			compileASTGlobalReference(&node->globalID, p);
+			break;
+		}
+		case ASTLocalVariable_NODE_TYPE:{
+			compileASTLocalVariable(&node->localVar, p);
+			break;
+		}
+		case ASTLocalID_NODE_TYPE:{
+			compileASTLocalReference(&node->localID, p);
+			break;
+		}
+		case ASTGlobalAssignment_NODE_TYPE:{
+			compileASTGlobalAssignment(&node->globalAss, p);
+			break;
+		}
+		case ASTLocalAssignment_NODE_TYPE:{
+			compileASTLocalAssignment(&node->localAss, p);
+			break;
+		}
+		case ASTBlock_NODE_TYPE:{
+			compileASTBlock(&node->block, p);
+			break;
+		}
+		case ASTString_NODE_TYPE:{
+			compileASTString(&node->str, p);
+			break;
+		}
 		default : {
-			printf("Cannot compile node of given type"); 
+			printf("Cannot compile node of given type: %d", node->type); 
 			exit(1);
 		}
 	}
@@ -158,8 +246,8 @@ void printValues(ValueArray* vals){
 
 void printOPS(Program* p){
 	printf("Ops: ");
-	for(int i = 0; i < p->ops.opCount; i++){
-		switch (p->ops.ops[i]) {
+	for(int i = 0; i < p->ops->opCount; i++){
+		switch (p->ops->ops[i]) {
 			case PLUS_OP: {
 				printf("+");
 				break;
@@ -232,8 +320,31 @@ void printOPS(Program* p){
 				printf("()");
 				break;
 			}
-			case ID_OP: {
-				printf("ID[");
+			case GET_GLOBAL_VAR_OP: {
+				i += 1;
+				printf("GetGlobal[");
+				printf("%d", p->ops->ops[i]);
+				printf("]");
+				break;
+			}
+			case SET_GLOBAL_VAR_OP: {
+				i += 1;
+				printf("SetGlobal[");
+				printf("%d", p->ops->ops[i]);
+				printf("]");
+				break;
+			}
+			case GET_LOCAL_VAR_OP: {
+				i += 1;
+				printf("SetLocal[");
+				printf("%d", p->ops->ops[i]);
+				printf("]");
+				break;
+			}
+			case SET_LOCAL_VAR_OP: {
+				i += 1;
+				printf("SetGlobal[");
+				printf("%d", p->ops->ops[i]);
 				printf("]");
 				break;
 			}
@@ -245,32 +356,39 @@ void printOPS(Program* p){
 				printf("print");
 				break;
 			}
+			case STR_VAL_OP:{
+				i += 1;
+				printf("str[");
+				printf("%s", p->strings[p->ops->ops[i]]);
+				printf("]");
+				break;
+			}
 			case VAL_OP:{
 				i += 1;
-				if(p->values.values[p->ops.ops[i]].type == I32_VAL){
+				if(p->values->values[p->ops->ops[i]].type == I32_VAL){
 					printf("val:i32[");
-					printf("%d", p->values.values[p->ops.ops[i]].i32);
+					printf("%d", p->values->values[p->ops->ops[i]].i32);
 					printf(" at: " );
-					printf("%d", p->ops.ops[i]);
+					printf("%d", p->ops->ops[i]);
 					printf("]");
 				}
-				else if(p->values.values[p->ops.ops[i]].type == F32_VAL){
+				else if(p->values->values[p->ops->ops[i]].type == F32_VAL){
 					printf("val:f32[");
-					printf("%f", p->values.values[p->ops.ops[i]].f32);
+					printf("%f", p->values->values[p->ops->ops[i]].f32);
 					printf(" at: " );
-					printf("%d", p->ops.ops[i]);
+					printf("%d", p->ops->ops[i]);
 					printf("]");
 				}
-				else if(p->values.values[p->ops.ops[i]].type == BOOL_VAL){
+				else if(p->values->values[p->ops->ops[i]].type == BOOL_VAL){
 					printf("val:bool[");
-					if(p->values.values[p->ops.ops[i]].boolean){
+					if(p->values->values[p->ops->ops[i]].boolean){
 						printf("true");
 					}
 					else{ 
 						printf("false");
 					}
 					printf(" at: " );
-					printf("%d", p->ops.ops[i]);
+					printf("%d", p->ops->ops[i]);
 					printf("]");
 				}
 				else{
@@ -295,8 +413,8 @@ void printOPS(Program* p){
 
 void printBytes(Program* p){
 	printf("ops: ");
-	for(int i = 0; i < p->ops.opCount; i++){
-		printf("%d, ", p->ops.ops[i]);
+	for(int i = 0; i < p->ops->opCount; i++){
+		printf("%d, ", p->ops->ops[i]);
 	}
 }
 
@@ -316,19 +434,29 @@ void freeValues(ValueArray* arr){
 }
 
 void freeProgram(Program* p){
-	freeOPs(&p->ops);
-	freeValues(&p->values);
+	freeOPs(p->ops);
+	freeValues(p->values);
 	free(p);
 }
 
 
 //->ops
 //p
-Program compile(AST* ast){
-	Program p = initProgram();
+Program* compile(Program* p, AST* ast){
+	//Program* p = initProgram();
 	for(int i = 0; i < ast->numberOfNodes; i++){
-		compileASTNode(&ast->nodes[i], &p);
+		compileASTNode(&ast->nodes[i], p);
 	}
-	emitOP(&p.ops, HALT_OP);
+	emitOP(p->ops, HALT_OP);
 	return p;
 }
+
+/*
+	ASTGlobalVariable_NODE_TYPE,
+	ASTLocalVariable_NODE_TYPE,
+	ASTBlock_NODE_TYPE,
+	ASTLocalAssignment_NODE_TYPE,
+	ASTGlobalAssignment_NODE_TYPE,
+	ASTLocalID_NODE_TYPE,
+	ASTGlobalID_NODE_TYPE,
+*/

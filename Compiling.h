@@ -13,15 +13,24 @@ typedef struct {
 
 typedef struct {
 	Value* values;
+	char** strings;
+	//objects 
+	
+	long stringCount;
+	long stringCappacity;
+	
 	long cappacity;
 	long valueCount;
 } ValueArray;
 
 typedef struct {
-	ValueArray values;
-	OPArray ops;
+	ValueArray* values;
+	OPArray* ops;
+	long globalCount;
+	char** strings;
 } Program;
 
+Program* newProgram(int stringCount);
 void compileASTNode();
 void printValues(ValueArray* vals);
 void printOPS(Program* p);
@@ -29,6 +38,6 @@ void printProgram(Program* p);
 void freeProgram(Program* p);
 
 
-Program compile(AST* ast);
+Program* compile(Program* p, AST* ast);
 
 #endif

@@ -33,34 +33,48 @@ typedef enum{
 	
 	CALL_OP,
 	
-	ID_OP,
-	
 	VAL_OP,
-	
+	STR_VAL_OP,
+
 	PRINT_OP,
 	
 	HALT_OP,
 	POP_OP,
 	
+	SET_GLOBAL_VAR_OP,
+	GET_GLOBAL_VAR_OP,
+	
+	SET_LOCAL_VAR_OP,
+	GET_LOCAL_VAR_OP,
+		
 }OPCode;
 
 typedef enum {
 	I32_VAL,
 	F32_VAL,
-	I_STR_VAL,
 	STR_VAL,
 	BOOL_VAL,
 	HEAP_VAL,
 } ValueType;
 
 typedef enum {
-	HEAP_I_STRING,
 	HEAP_STRING,
 } HeapType;
 
 typedef struct {
 	HeapType type;
 } HeapValue;
+
+//For the analyzer and type systems
+typedef enum{
+	I32_TYPE,
+	F32_TYPE,
+	STR_TYPE,
+	BOOL_TYPE,
+	INFERRED_TYPE,
+	ERROR_TYPE,
+	VOID_TYPE,
+}Type;
 
 typedef struct {
 	union {

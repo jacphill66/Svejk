@@ -1,0 +1,36 @@
+
+let x:i32 = "apples";
+let z:f32 = "apples";
+let g:bool = "apples";
+
+let a:i32 = 1;
+let a:i32 = 2;
+let a:bool = 3;
+
+let x:i32 = 1;
+x = 1.1;
+x = "apples";
+x = false;
+x = 1;
+
+y = 1;
+print y;
+
+{
+	let x:i32 = "apples";
+	let z:f32 = "apples";
+	let g:bool = "apples";
+
+	let a:i32 = 1;
+	let a:i32 = 2;
+	let a:bool = 3;
+
+	let x:i32 = 1;
+	x = 1.1;
+	x = "apples";
+	x = false;
+	x = 1;
+
+	y = 1;
+	print y;
+}

@@ -1,37 +1,23 @@
-#ifndef Table_H_ 
-#define Table_H_
-#include "Common.h"
-#include "Memory.h"
-#include "Heaping.h"
-#include "Strings.h"
+#ifndef TABLE_H_ 
+#define TABLE_H_
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include <string.h>
+#include <assert.h>
+#include "RedBlackTree.h"
 
-typedef struct {
-	struct SubEntry* entry;	
-	Value v;
-} SubEntry;
-
-typedef struct {
-	HeapString* key;
-	SubEntry* entries;
-	long entryCount;
-	long cappacity;
-}Entry;
 
 typedef struct{
-	Entry* entries;
+	RedBlackTree** elements;
+	long length;
 	long size;
-	long cappacity;
-}Table;
+} Table;
 
-Table* newTable(long size);
-Value getEntry(Table* table, HeapString* key);
-Table* mergeTables();
-
-
-
-void freeSubEntry(SubEntry* subEntry);
-void freeEntry(Entry* entry);
-void freeTable(Table* table);
-
+Table* newTable(int size);
+Value get(Table* t, char* key);
+void set(Table* t, char* key, int keySize, Value value);
+void printTable(Table* t);
+void freeTable(Table* t);
 
 #endif
