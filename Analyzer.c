@@ -237,31 +237,48 @@ Type analyzeString(Analyzer* a, ErrorArray* errors, ASTString* str){
 Type analyzeNode(Analyzer* a, ErrorArray* errors, ASTNode* n){
 	switch(n->type){
 		case ASTPrint_NODE_TYPE:{
-			return analyzePrint(a, errors, &n->print);
+			Type t = analyzePrint(a, errors, &n->print);
+			n->t = t;
+			return t;
 		}
 		case ASTExpression_NODE_TYPE:{
-			return analyzeExpression(a, errors, &n->expr);
+			Type t = analyzeExpression(a, errors, &n->expr);
+			n->t = t;
+			return t;
 		}
 		case ASTBinaryOP_NODE_TYPE :{
-			return analyzeBinary(a, errors, &n->binaryOP);
+			Type t = analyzeBinary(a, errors, &n->binaryOP);
+			n->t = t;
+			return t;
 		}
 		case ASTUnaryOP_NODE_TYPE : {
-			return analyzeUnary(a, errors, &n->unaryOP);
+			Type t = analyzeUnary(a, errors, &n->unaryOP);
+			n->t = t;
+			return t;
 		}
 		case ASTValue_NODE_TYPE:{
-			return analyzeValue(a, errors, &n->value);
+			Type t = analyzeValue(a, errors, &n->value);
+			n->t = analyzeValue(a, errors, &n->value);
+			return t;
 		}
 		case ASTGlobalVariable_NODE_TYPE:{
-			return analyzeGlobalVariable(a, errors, &n->globalVar);
+			Type t = analyzeGlobalVariable(a, errors, &n->globalVar);
+			n->t = t;
+			return t;
 		}
 		case ASTGlobalID_NODE_TYPE:{
-			return analyzeGlobalVariableReference(a, errors, &n->globalID);
+			Type t = analyzeGlobalVariableReference(a, errors, &n->globalID);
+			return t;
 		}
 		case ASTLocalVariable_NODE_TYPE:{
-			return analyzeLocalVariable(a, errors, &n->localVar);
+			Type t = analyzeLocalVariable(a, errors, &n->localVar);
+			n->t = t;
+			return t;
 		}
 		case ASTLocalID_NODE_TYPE:{
-			return analyzeLocalVariableReference(a, errors, &n->localID);		
+			Type t = analyzeLocalVariableReference(a, errors, &n->localID);		
+			n->t = t;
+			return t;
 		}
 		case ASTGlobalAssignment_NODE_TYPE:{
 			return analyzeGlobalAssignment(a, errors, &n->globalAss);

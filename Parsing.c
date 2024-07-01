@@ -199,18 +199,51 @@ void printASTNode(AST* ast, ASTNode* node){
 		}
 		case ASTForLoop_NODE_TYPE:{
 			printf("for ");
-			if(node->loop.n1 != NULL) printASTNode(ast, node->loop.n1);
-			if(node->loop.n2 != NULL) {
+			if(node->loop.n1 != NULL){
+				printf("NODE1=[");
 				printASTNode(ast, node->loop.n1);
-				printASTNode(ast, node->loop.n2);
+				printf("]");
+			}
+			if(node->loop.n2 != NULL) {
+				if(node->loop.n3 == NULL){
+					printf(" in ");
+					printf("COLLECTION=[");
+					printASTNode(ast, node->loop.n2);
+					printf("] ");
+				}
+				else{
+					printf("NODE2=[");
+					printASTNode(ast, node->loop.n2);
+					printf("] ");
+					printf("NODE3=[");
+					printASTNode(ast, node->loop.n3);
+					printf("]");
+				}
 			}
 			printf("[");
-			if(node->loop.min != NULL) printASTNode(ast, node->loop.min);
-			printf(",");
-			if(node->loop.min != NULL) printASTNode(ast, node->loop.max);
+			if(node->loop.min != NULL){
+				printf("MIN=[");
+				printASTNode(ast, node->loop.min);
+				printf("]");
+			}
+			printf(", ");
+			if(node->loop.max != NULL) {
+				printf("MAX=[");
+				printASTNode(ast, node->loop.max);
+				printf("]");
+			}
 			printf("]");
+			printf("{\n");
 			printASTNode(ast, node->loop.b);
+			printf("}");
 			break;
+		}
+		case ASTLoop_NODE_TYPE:{
+			printf("for ");
+			printASTNode(ast, node->simpleLoop.expr);
+			printf("{\n");
+			printASTNode(ast, node->simpleLoop.block);
+			printf("}");
 		}
 		default : {
 			printf("Cannot print node of given type\n"); 
@@ -795,25 +828,31 @@ ASTNode* newLoop(){
 }
 
 ASTNode* parseFor(Parser* parser, TokenArray* tokens){
-	advance(tokens);
+	Token t = advance(tokens);
 	ASTNode* b = newBlock();
 	parser->scopeDepth += 1;
 	newScope(parser->scopes);
 	ASTNode* loop = newLoop();
-	if(tokens->tokens->type != LC_BRACKET_TOKEN){
-		loop->loop.n1 = parseStatement(parser, tokens, NULL);
-		if(tokens->tokens->type == IN_TOKEN){}//later}
+	loop->loop.line = t.line;
+	if((tokens->tokens->type != LC_BRACKET_TOKEN)&&(tokens->tokens->type != LS_BRACKET_TOKEN)){
+		loop->loop.n1 = parseStatement(parser, tokens, b);
+		if(tokens->tokens->type == IN_TOKEN){
+			advance(tokens);
+			ASTNode* expr = parseExpression(tokens, parser);
+			loop->loop.n2 = expr;
+		}//later}
 		else if((tokens->tokens->type != LS_BRACKET_TOKEN)&&(tokens->tokens->type != LC_BRACKET_TOKEN)){
-			loop->loop.n2 = parseStatement(parser, tokens, NULL);
-			loop->loop.n3 = parseStatement(parser, tokens, NULL);
+			advance(tokens);
+			loop->loop.n2 = parseStatement(parser, tokens, b);
+			advance(tokens);
+			loop->loop.n3 = parseStatement(parser, tokens, b);
 		}
-
 	}
 	if(tokens->tokens->type == LS_BRACKET_TOKEN){
-		advance(tokens);//[a,b] or [a,] or [,a] or [,]
-		if(tokens->tokens->type != COMMA_TOKEN) loop->loop.min = parseStatement(parser, tokens, NULL);
 		advance(tokens);
-		if(tokens->tokens->type != LS_BRACKET_TOKEN) loop->loop.max = parseStatement(parser, tokens, NULL);
+		if(tokens->tokens->type != COMMA_TOKEN) loop->loop.min = parseExpression(tokens, parser);
+		advance(tokens);
+		if(tokens->tokens->type != RS_BRACKET_TOKEN) loop->loop.max = parseExpression(tokens, parser);
 		advance(tokens);
 	}
 	/*parseLocal(parser, b, tokens);

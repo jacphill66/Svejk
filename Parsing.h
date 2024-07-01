@@ -14,35 +14,41 @@ typedef struct{
 	OPCode op;
 	ASTNode* rhs;
 	long line;
+	Type t;
 }ASTBinaryOP;
 
 typedef struct{
 	OPCode op;
 	ASTNode* opperand;
 	long line;
+	Type t;
 }ASTUnaryOP;
 
 typedef struct{
 	//hold args?
 	ASTNode* opperand;	
 	long line;
+	Type t;
 }ASTCallOP;
 
 typedef struct {
 	Value v;
 	long line;
+	Type t;
 }ASTValue;
 
 typedef struct {
 	char* id;
 	long index;
 	long line;
+	Type t;
 }ASTLocalID;
 
 typedef struct {
 	char* id;
 	long index;
 	long line;
+	Type t;
 }ASTGlobalID;
 
 typedef struct {
@@ -50,6 +56,7 @@ typedef struct {
 	ASTNode* expr;
 	long offset;
 	long line;
+	Type t;
 }ASTLocalAssignment;
 
 typedef struct {
@@ -57,6 +64,7 @@ typedef struct {
 	ASTNode* expr;
 	long index;
 	long line;
+	Type t;
 }ASTGlobalAssignment;
 
 typedef struct {
@@ -65,6 +73,7 @@ typedef struct {
 	ASTNode* expr;
 	long index;
 	long line;
+	Type t;
 }ASTGlobalVariable;
 
 typedef struct {
@@ -73,16 +82,19 @@ typedef struct {
 	ASTNode* expr;
 	long offset;
 	long line;
+	Type t;
 }ASTLocalVariable;
 
 typedef struct {
 	ASTNode* expr;
 	long line;
+	Type t;
 }ASTExpression;
 
 typedef struct{
 	ASTNode* expr;
 	long line;
+	Type t;
 }ASTPrint;
 
 typedef struct {
@@ -91,12 +103,14 @@ typedef struct {
 	long cappacity;
 	long numberOfNodes;
 	long line;
+	Type t;
 } ASTBlock;
 
 typedef struct{
 	char* str;
 	long index;
 	long line;
+	Type t;
 }ASTString;
 
 typedef struct{
@@ -106,7 +120,16 @@ typedef struct{
 	ASTNode* min; 
 	ASTNode* max;
 	ASTNode* b;
+	long line;
+	Type t;
 }ASTForLoop;
+
+typedef struct{
+	ASTNode* expr;
+	ASTNode* block;
+	long line;
+	Type t;
+}ASTLoop;
 
 typedef enum{
 	ASTBinaryOP_NODE_TYPE,
@@ -124,6 +147,7 @@ typedef enum{
 	ASTLocalAssignment_NODE_TYPE,
 	ASTGlobalAssignment_NODE_TYPE,
 	ASTForLoop_NODE_TYPE,
+	ASTLoop_NODE_TYPE,
 }ASTNodeType;
 
 struct ASTNode {
@@ -144,6 +168,7 @@ struct ASTNode {
 		ASTLocalAssignment localAss;
 		ASTBlock block;
 		ASTForLoop loop;
+		ASTLoop simpleLoop;
 	};
 } ;
 
@@ -163,6 +188,7 @@ typedef struct {
 	long stringCount;	
 } Parser;
 
+ASTNode* newLoop();
 
 ASTNode* split(Parser* parser, TokenArray* tokens, int prec);
 
