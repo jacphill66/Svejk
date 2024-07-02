@@ -188,7 +188,11 @@ typedef struct {
 	long stringCount;	
 } Parser;
 
+
+void emitNodeToBlock(ASTNode* node, ASTNode* b);
+
 ASTNode* newLoop();
+void emitNode(ASTNode* node, AST* ast);
 
 ASTNode* split(Parser* parser, TokenArray* tokens, int prec);
 

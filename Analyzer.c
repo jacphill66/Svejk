@@ -238,62 +238,71 @@ Type analyzeNode(Analyzer* a, ErrorArray* errors, ASTNode* n){
 	switch(n->type){
 		case ASTPrint_NODE_TYPE:{
 			Type t = analyzePrint(a, errors, &n->print);
-			n->t = t;
+			n->print.t = t;
 			return t;
 		}
 		case ASTExpression_NODE_TYPE:{
 			Type t = analyzeExpression(a, errors, &n->expr);
-			n->t = t;
+			n->expr.t = t;
 			return t;
 		}
 		case ASTBinaryOP_NODE_TYPE :{
 			Type t = analyzeBinary(a, errors, &n->binaryOP);
-			n->t = t;
+			n->binaryOP.t = t;
 			return t;
 		}
 		case ASTUnaryOP_NODE_TYPE : {
 			Type t = analyzeUnary(a, errors, &n->unaryOP);
-			n->t = t;
+			n->unaryOP.t = t;
 			return t;
 		}
 		case ASTValue_NODE_TYPE:{
 			Type t = analyzeValue(a, errors, &n->value);
-			n->t = analyzeValue(a, errors, &n->value);
+			n->value.t = analyzeValue(a, errors, &n->value);
 			return t;
 		}
 		case ASTGlobalVariable_NODE_TYPE:{
 			Type t = analyzeGlobalVariable(a, errors, &n->globalVar);
-			n->t = t;
+			n->globalVar.t = t;
 			return t;
 		}
 		case ASTGlobalID_NODE_TYPE:{
 			Type t = analyzeGlobalVariableReference(a, errors, &n->globalID);
+			n->globalID.t = t;
 			return t;
 		}
 		case ASTLocalVariable_NODE_TYPE:{
 			Type t = analyzeLocalVariable(a, errors, &n->localVar);
-			n->t = t;
+			n->localVar.t = t;
 			return t;
 		}
 		case ASTLocalID_NODE_TYPE:{
 			Type t = analyzeLocalVariableReference(a, errors, &n->localID);		
-			n->t = t;
+			n->localID.t = t;
 			return t;
 		}
 		case ASTGlobalAssignment_NODE_TYPE:{
-			return analyzeGlobalAssignment(a, errors, &n->globalAss);
+			Type t = analyzeGlobalAssignment(a, errors, &n->globalAss);
+			n->globalAss.t = t;
+			return t;
 		}
 		case ASTLocalAssignment_NODE_TYPE:{
-			return analyzeLocalAssignment(a, errors, &n->localAss);
+			Type t = analyzeLocalAssignment(a, errors, &n->localAss);
+			n->localAss.t = t;
+			return t;
 		}
 		case ASTBlock_NODE_TYPE:{
-			return analyzeBlock(a, errors, &n->block);
+			Type t = analyzeBlock(a, errors, &n->block);
+			n->block.t = t;
+			return t;
 		}
 		case ASTString_NODE_TYPE:{
-			return analyzeString(a, errors, &n->str);
+			Type t = analyzeString(a, errors, &n->str);
+			n->str.t = t;
+			return t;
 		}
 		default : {
-			printf("Cannot analyze node of given type: %d", n->type); 
+			printf("Cannot analyze node of given type: %d", n->type);
 			exit(1);
 		}
 	}
