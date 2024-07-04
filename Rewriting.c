@@ -23,7 +23,8 @@ bbaa
 
 
 */
-
+//When you make a new variable you need to find a place for it.
+//Also need to adjust every variable after it by one
 //resize a string function...
 
 void addChar(char* str, char* currentString, int index){

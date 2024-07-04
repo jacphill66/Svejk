@@ -4,6 +4,7 @@
 #include "Lexing.h"
 #include "Common.h"
 #include "Parsing.h"
+#include "ScopeChain.h"
 
 typedef struct {
 	OPCode* ops;
@@ -30,14 +31,23 @@ typedef struct {
 	char** strings;
 } Program;
 
+typedef struct {
+	AST* ast;
+	Program* prog;
+	ScopeChain* scopes;
+	int scopeDepth;
+} Compiler;
+
 Program* newProgram(int stringCount);
-void compileASTNode();
+Compiler* newCompiler(AST* ast);
+void compileASTNode(Compiler* c, ASTNode* node);
 void printValues(ValueArray* vals);
 void printOPS(Program* p);
 void printProgram(Program* p);
 void freeProgram(Program* p);
+void freeCompiler(Compiler* compiler);
 
 
-Program* compile(Program* p, AST* ast);
+Program* compile(Compiler* c, AST* ast);
 
 #endif

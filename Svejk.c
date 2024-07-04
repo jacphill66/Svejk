@@ -18,75 +18,29 @@ int main(){
 	char* errorTest = "tests/Errors Test.txt";
 	char* inferenceTest = "tests/Inference Test.txt";
 	char* forTest = "tests/for Test.txt";
-	lex(tokens, forTest);
+	lex(tokens, arithmeticTest);
 	printTokens(tokens);		
 	Parser* parser = newParser();
 	parse(parser, tokens);
 	freeTokens(tokens);
 	printAST(parser->ast);
-	exit(1);
+	//exit(1);
 	Analyzer* analyzer = newAnalyzer(parser->globalCount);
 	analyze(analyzer, parser->ast);
 	printErrors(analyzer->errors);
 	freeAnalyzer(analyzer);
-	exit(1);
-	Program* p = newProgram(parser->stringCount);
-	compile(p, parser->ast);
-	freeParser(parser);
-	printProgram(p);
-
-	//freeProgram(p);
 	//exit(1);
-	VM* vm = initVM(p);
+	Compiler* c = newCompiler(parser->ast);
+	compile(c, parser->ast);
+	freeParser(parser);
+	printProgram(c->prog);
+	VM* vm = initVM(c->prog);
 	execute(vm);
-
-	//free(&p->ops);
-	//free(&p->values);
-	freeProgram(p);
+	freeCompiler(c);
 	printf("completed\n");
-	exit(1);
-	/*
-	typedef enum {
-	EQUAL_PREC,
-	COMP_PREC,
-	BOOL_PREC,
-	SUM_PREC,
-	FACTOR_PREC,
-	UNARY_PREC,
-	PRIMARY_PREC,
-} Precedence;
 	
-	
-		int precedence[] = { 
-			[PLUS_OP_TOKEN] = SUM_PREC,
-			[SUB_OP_TOKEN] = SUM_PREC,
-			[MULT_OP_TOKEN] = FACTOR_PREC,
-			[DIV_OP_TOKEN] = FACTOR_PREC,
-			[MOD_OP_TOKEN] = FACTOR_PREC,
-			[EQUAL_OP_TOKEN] = EQUAL_PREC,
-			[LESS_OP_TOKEN] = COMP_PREC,
-			[GREATER_OP_TOKEN] = COMP_PREC,
-			[LOE_OP_TOKEN] = COMP_PREC,
-			[GOE_OP_TOKEN] = COMP_PREC,
-			[AND_OP_TOKEN] = BOOL_PREC,
-			[OR_OP_TOKEN] = BOOL_PREC,
-			[NOT_OP_TOKEN] = BOOL_PREC,	
-			[FACT_OP_TOKEN] = UNARY_PREC,
-			[I32_VAL_TOKEN] = PRIMARY_PREC,
-			[F32_VAL_TOKEN] = PRIMARY_PREC,
-			[STR_VAL_TOKEN] = PRIMARY_PREC,
-			[TRUE_VAL_TOKEN] = PRIMARY_PREC,
-			[FALSE_VAL_TOKEN] = PRIMARY_PREC,
-			[ID_TOKEN] = PRIMARY_PREC,		
-			[LPAREN_OP_TOKEN] = PRIMARY_PREC,
-	};
-	
-	
-	for(int i = 0; i < 21; i++){
-		printf("%d\n", precedence[i]);
-	}
-	*/
 	return 0;
 }
-//Free Identifiers?
-//check and advance in parser
+
+//In rewriter and analyzer, don't pass ast node, pass the specific type
+//Finish rewriter, add loop analysis, do the loop backend

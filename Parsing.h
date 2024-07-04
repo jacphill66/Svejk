@@ -176,6 +176,7 @@ typedef struct {
 	ASTNode* nodes;
 	long cappacity;
 	long numberOfNodes;
+	int stringCount;
 } AST;
 
 typedef struct {

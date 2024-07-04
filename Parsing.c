@@ -420,6 +420,7 @@ ASTNode* literal(Parser* parser, Token t){
 				str.index = parser->stringCount;
 				insert(parser->strings, t.value, t.size, v);
 				parser->stringCount++;
+				parser->ast->stringCount++;
 			}
 			node->str = str;
 			return node;
@@ -1043,6 +1044,7 @@ AST* newAST(){
 	ast->nodes = (ASTNode*) malloc(sizeof(ASTNode));
 	ast->cappacity = 1;
 	ast->numberOfNodes = 0;
+	ast->stringCount = 0;
 	return ast;
 }
 

@@ -22,7 +22,8 @@ OPCode* resizeOPs(OPCode* ops, long size){
 	return newOps;
 }
 
-void emitOP(OPArray* ops, OPCode op){
+void emitOP(Compiler* c, OPCode op){
+	OPArray* ops = c->prog->ops;
 	ops->ops[ops->opCount] = op;
 	ops->opCount++;
 	if(ops->opCount == ops->cappacity){
@@ -31,7 +32,8 @@ void emitOP(OPArray* ops, OPCode op){
 	}
 }
 
-void emitValue(ValueArray* values, Value v){
+void emitValue(Compiler* c, Value v){
+	ValueArray* values = c->prog->values;
 	//printf("\n B-Type: %d\n", v.type);
 	values->values[values->valueCount] = v;
 	values->valueCount++;
@@ -54,10 +56,20 @@ Program* newProgram(int stringCount){
 	v->cappacity = 1;
 	v->valueCount = 0;
 	//Program p = {v, o};
+	p->globalCount = 0;
 	p->values = v;
 	p->ops = o;
 	p->strings = (char**)malloc(sizeof(char*)*stringCount);
 	return p;
+}
+
+Compiler* newCompiler(AST* ast){
+	Compiler* c = (Compiler*)malloc(sizeof(Compiler));
+	c->prog = newProgram(ast->stringCount);
+	c->ast = ast;
+	c->scopes = newScopeChain();//redo local indexing because of rewriting
+	c->scopeDepth = 0;
+	return c;
 }
 
 void compileASTCallNode(ASTCallOP* node, Program* p){
@@ -68,143 +80,155 @@ void compileASTIDNode(Program* p){
 	//fill in later
 }
 
-void compileASTBinaryNode(ASTBinaryOP* node, Program* p){
-	compileASTNode(node->lhs, p);
-	compileASTNode(node->rhs, p);
-	emitOP(p->ops, node->op);
+void compileASTBinaryNode(Compiler* c, ASTBinaryOP* node){
+	compileASTNode(c, node->lhs);
+	compileASTNode(c, node->rhs);
+	emitOP(c, node->op);
 }
 
-void compileASTUnaryNode(ASTUnaryOP* node, Program* p){
-	compileASTNode(node->opperand, p);
-	emitOP(p->ops, node->op);
+void compileASTUnaryNode(Compiler* c, ASTUnaryOP* node){
+	compileASTNode(c, node->opperand);
+	emitOP(c, node->op);
 }
 
-void compileASTValueNode(ASTValue* value, Program* p){
+void compileASTValueNode(Compiler* c, ASTValue* value){
 	//printf("\n A-Type: %d\n", value->v.type);
 	//exit(1);
-	emitValue(p->values, value->v);
-	emitOP(p->ops, VAL_OP);
+	emitValue(c, value->v);
+	emitOP(c, VAL_OP);
 	//turn the int into 4 bytes and emit them
-	emitOP(p->ops, p->values->valueCount-1);
+	emitOP(c, c->prog->values->valueCount-1);
 }
 
-void compileASTExpressionNode(ASTExpression* expr, Program* p){
-	compileASTNode(expr->expr, p);
-	emitOP(p->ops, POP_OP);
+void compileASTExpressionNode(Compiler* c, ASTExpression* expr){
+	compileASTNode(c, expr->expr);
+	emitOP(c, POP_OP);
 }
 
-void compileASTPrint(ASTPrint* print, Program* p){
-	compileASTNode(print->expr, p);
-	emitOP(p->ops, PRINT_OP);
-	emitOP(p->ops, POP_OP);
+void compileASTPrint(Compiler* c, ASTPrint* print){
+	compileASTNode(c, print->expr);
+	emitOP(c, PRINT_OP);
+	emitOP(c, POP_OP);
 }
 
-void compileASTGlobalVariable(ASTGlobalVariable* var, Program* p){
-	compileASTNode(var->expr, p);
-	emitOP(p->ops, SET_GLOBAL_VAR_OP);
-	emitOP(p->ops, var->index);
+void compileASTGlobalVariable(Compiler* c, ASTGlobalVariable* var){
+	compileASTNode(c, var->expr);
+	emitOP(c, SET_GLOBAL_VAR_OP);
+	emitOP(c, var->index);
+	c->prog->globalCount++;
 	//emitOP(p->ops, POP_OP);//maybe, worked with it????
 }
 
-void compileASTGlobalReference(ASTGlobalID* id, Program* p){
-	emitOP(p->ops, GET_GLOBAL_VAR_OP);
-	emitOP(p->ops, id->index);
+void compileASTGlobalReference(Compiler* c, ASTGlobalID* id){
+	emitOP(c, GET_GLOBAL_VAR_OP);
+	emitOP(c, id->index);
 }
 
-void compileASTLocalVariable(ASTLocalVariable* var, Program* p){
-	compileASTNode(var->expr, p);
+void compileASTLocalVariable(Compiler* c, ASTLocalVariable* var){
+	addToCurrentScope(c->scopes, var->id, -1, -1);
+	compileASTNode(c, var->expr);
 }
 
-void compileASTLocalReference(ASTLocalID* id, Program* p){
-	emitOP(p->ops, GET_LOCAL_VAR_OP);
-	emitOP(p->ops, id->index);
+void compileASTLocalReference(Compiler* c, ASTLocalID* id){
+	emitOP(c, GET_LOCAL_VAR_OP);
+	int i = searchScopes(c->scopes, id->id);
+	if(i < 0) {
+		printf("Compiler Error");
+		exit(1);
+	}
+	emitOP(c, i);
 }
 
-void compileASTBlock(ASTBlock* block, Program* p){
-	for(int i = 0; i < block->numberOfNodes; i++) compileASTNode(&block->nodes[i], p);
-	for(int i = 0; i < block->variableCount; i++) emitOP(p->ops, POP_OP);
+void compileASTBlock(Compiler* c, ASTBlock* block){
+	c->scopeDepth++;
+	newScope(c->scopes);
+	for(int i = 0; i < block->numberOfNodes; i++) compileASTNode(c, &block->nodes[i]);
+	for(int i = 0; i < block->variableCount; i++) emitOP(c, POP_OP);
+	closeScope(c->scopes);
+	c->scopeDepth--;
 }
 
-void compileASTLocalAssignment(ASTLocalAssignment* ass, Program* p){
-	compileASTNode(ass->expr);
-	emitOP(p->ops, SET_LOCAL_VAR_OP);
-	emitOP(p->ops, ass->offset);
+void compileASTLocalAssignment(Compiler* c, ASTLocalAssignment* ass){
+	compileASTNode(c, ass->expr);
+	emitOP(c, SET_LOCAL_VAR_OP);
+	int i = searchScopes(c->scopes, ass->id);
+	if(i < 0) {
+		printf("Compiler Error");
+		exit(1);
+	}
+	emitOP(c, i);
 	//printf("INDEX: %ld\n", ass->offset);
 }
 
-void compileASTGlobalAssignment(ASTGlobalAssignment* ass, Program* p){
-	compileASTNode(ass->expr);
-	emitOP(p->ops, SET_GLOBAL_VAR_OP);
-	emitOP(p->ops, ass->index);	
+void compileASTGlobalAssignment(Compiler* c, ASTGlobalAssignment* ass){
+	compileASTNode(c, ass->expr);
+	emitOP(c, SET_GLOBAL_VAR_OP);
+	emitOP(c, ass->index);	
 	//printf("INDEX: %ld\n", ass->index);
 }
 
-void compileASTString(ASTString* str, Program* p){
-	emitOP(p->ops, STR_VAL_OP);
-	emitOP(p->ops, str->index);
-	p->strings[str->index] = str->str;
+void compileASTString(Compiler* c, ASTString* str){
+	emitOP(c, STR_VAL_OP);
+	emitOP(c, str->index);
+	c->prog->strings[str->index] = str->str;
 }
 
-void compileASTNode(ASTNode* node, Program* p){
+void compileASTNode(Compiler* c, ASTNode* node){
 	switch(node->type){
 		case ASTPrint_NODE_TYPE:{
-			compileASTPrint(&node->print, p);
+			compileASTPrint(c, &node->print);
 			break;
 		}
 		case ASTExpression_NODE_TYPE:{
-			compileASTExpressionNode(&node->expr, p);
+			compileASTExpressionNode(c, &node->expr);
 			break;
 		}
 		case ASTBinaryOP_NODE_TYPE :{
-			compileASTBinaryNode(&node->binaryOP, p);
+			compileASTBinaryNode(c, &node->binaryOP);
 			break;
 		}
 		case ASTUnaryOP_NODE_TYPE : {
-			compileASTUnaryNode(&node->unaryOP, p);
+			compileASTUnaryNode(c, &node->unaryOP);
 			break;
 		}
 		case ASTCallOP_NODE_TYPE:{
-			compileASTCallNode(&node->callOP, p);
+			//compileASTCallNode(c, &node->callOP);
 			break;
 		}
-		//case ASTID_NODE_TYPE:{
-			//compileASTIDNode(node->id, p);
-		//	break;
-		//}
 		case ASTValue_NODE_TYPE:{
-			compileASTValueNode(&node->value, p);
+			compileASTValueNode(c, &node->value);
 			break;
 		}
 		case ASTGlobalVariable_NODE_TYPE:{
-			compileASTGlobalVariable(&node->globalVar, p);
+			compileASTGlobalVariable(c, &node->globalVar);
 			break;
 		}
 		case ASTGlobalID_NODE_TYPE:{
-			compileASTGlobalReference(&node->globalID, p);
+			compileASTGlobalReference(c, &node->globalID);
 			break;
 		}
 		case ASTLocalVariable_NODE_TYPE:{
-			compileASTLocalVariable(&node->localVar, p);
+			compileASTLocalVariable(c, &node->localVar);
 			break;
 		}
 		case ASTLocalID_NODE_TYPE:{
-			compileASTLocalReference(&node->localID, p);
+			compileASTLocalReference(c, &node->localID);
 			break;
 		}
 		case ASTGlobalAssignment_NODE_TYPE:{
-			compileASTGlobalAssignment(&node->globalAss, p);
+			compileASTGlobalAssignment(c, &node->globalAss);
 			break;
 		}
 		case ASTLocalAssignment_NODE_TYPE:{
-			compileASTLocalAssignment(&node->localAss, p);
+			compileASTLocalAssignment(c, &node->localAss);
 			break;
 		}
 		case ASTBlock_NODE_TYPE:{
-			compileASTBlock(&node->block, p);
+			compileASTBlock(c, &node->block);
 			break;
 		}
 		case ASTString_NODE_TYPE:{
-			compileASTString(&node->str, p);
+			compileASTString(c, &node->str);
 			break;
 		}
 		default : {
@@ -439,24 +463,18 @@ void freeProgram(Program* p){
 	free(p);
 }
 
-
-//->ops
-//p
-Program* compile(Program* p, AST* ast){
-	//Program* p = initProgram();
-	for(int i = 0; i < ast->numberOfNodes; i++){
-		compileASTNode(&ast->nodes[i], p);
-	}
-	emitOP(p->ops, HALT_OP);
-	return p;
+void freeCompiler(Compiler* c){
+	free(c->prog);
+	free(c->scopes);
+	free(c);
 }
 
-/*
-	ASTGlobalVariable_NODE_TYPE,
-	ASTLocalVariable_NODE_TYPE,
-	ASTBlock_NODE_TYPE,
-	ASTLocalAssignment_NODE_TYPE,
-	ASTGlobalAssignment_NODE_TYPE,
-	ASTLocalID_NODE_TYPE,
-	ASTGlobalID_NODE_TYPE,
-*/
+
+
+Program* compile(Compiler* c, AST* ast){
+	for(int i = 0; i < c->ast->numberOfNodes; i++){
+		compileASTNode(c, &c->ast->nodes[i]);
+	}
+	emitOP(c, HALT_OP);
+	return c->prog;
+}
