@@ -5,21 +5,28 @@
 #include "Analyzer.h"
 
 typedef struct{
-	char** localVariables;
-	char** globalVariables;
-	int localVarIndex;
-	int globalVarIndex;
-	int cappacity;
+	char* str;
+	int length;
+	int size;
+}String;
+
+typedef struct{
+	String** localVariables;
+	String** globalVariables;
+	int localCount;
+	int localCappacity;
+	int globalCount;
 }VariableTable;
 
 typedef struct{
 	VariableTable* table;
 	AST* ast;
 	AST* rewrittenAST;
-
+	String** localVariables;
+	String** globalVariables;
 }Rewriter;
 
-Rewriter* newRewriter(Parser* p);
+Rewriter* newRewriter(AST* ast, int globalCount);
 ASTNode* rewriteNode(Rewriter* rewriter, ASTNode* n);
 AST* rewrite(Rewriter* rewriter, AST* ast);
 

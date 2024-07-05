@@ -27,10 +27,56 @@ bbaa
 //Also need to adjust every variable after it by one
 //resize a string function...
 
+//go through local and global variables and add characters one at a time to generate a unique string
+
+void append(String* str, char chr){
+	if(str->length+2 > str->size){
+		str->str = realloc(str->str, str->size*2);
+		str->size*=2;
+	}
+	str->str[str->length] = chr;
+	str->str[str->length+1] = '\0';
+	str->length++;
+}
+
+String* newString(char* id){
+	String* s = malloc(sizeof(String));
+	s->length = strlen(id);
+	s->size = s->length+1;
+	return s;
+}
+
+String** resizeStrings(String** strings, int size){
+	String** newStrings = (String**)realloc(strings, 2*size*sizeof(String*));
+	if(newStrings == NULL){
+		printf("could not resize strings!");
+		free(newStrings);
+		exit(1);
+	}
+	return newStrings;
+}
+
+void emitLocal(VariableTable* t, char* id){
+	t->localVariables[t->localCount] = newString(id);
+	t->localCount++;
+	if(t->localCount == t->localCappacity){
+		t->localVariables = resizeStrings(t->localVariables, t->localCappacity);
+		t->localCappacity *= 2;
+	}
+}
+
+void emitGlobal(VariableTable* t, char* id){
+	t->globalVariables[t->globalCount] = newString(id);
+	t->globalCount++;
+}
+
 void addChar(char* str, char* currentString, int index){
-	if(strlen(str) <= strlen(currentString)){
+	if(index < strlen(str)){
 		//if char at index is not a -> add b-
 		//else add b
+		if(str[index] == currentString[index]){
+			
+		}
 	}
 	else if(strlen(str) == strlen(currentString)){
 		//check with the string if it has one different character, keep the string
@@ -58,14 +104,6 @@ char** resizeVariables(char** variables, int cappacity){
 	return newVariables;
 }
 
-void emitVariable(VariableTable* table, char* id){
-	table->localVariables[table->localVarIndex] = id;
-	table->localVarIndex++;
-	if(table->localVarIndex == table->cappacity){
-		table->localVariables = resizeVariables(table->localVariables, table->cappacity);
-		table->cappacity *= 2;
-	}
-}
 
 void rewriteLoopType1(ASTNode* loop){
 	ASTNode nLoop;
@@ -208,8 +246,7 @@ ASTNode* rewriteGlobalVariable(Rewriter* rewriter, ASTNode* n){
 	var.t = n->globalVar.t;
 	node->globalVar = var;
 	node->type = ASTGlobalVariable_NODE_TYPE;
-	rewriter->table->globalVariables[rewriter->table->globalVarIndex] = var.id;
-	rewriter->table->globalVarIndex += 1;
+	emitGlobal(rewriter->table, n->globalVar.id);
 	return node;
 }
 ASTNode* rewriteLocalVariable(Rewriter* rewriter, ASTNode* n){
@@ -221,7 +258,7 @@ ASTNode* rewriteLocalVariable(Rewriter* rewriter, ASTNode* n){
 	var.t = n->localVar.t;
 	node->localVar = var;
 	node->type = ASTLocalVariable_NODE_TYPE;
-	emitVariable(rewriter->table, var.id);
+	emitLocal(rewriter->table, var.id);
 	return node;
 }
 ASTNode* rewriteBlock(Rewriter* rewriter, ASTNode* n){
@@ -238,7 +275,6 @@ ASTNode* rewriteBlock(Rewriter* rewriter, ASTNode* n){
 	for(int i = 0; i < n->block.numberOfNodes; i++){
 		emitNodeToBlock(rewriteNode(rewriter, &n->block.nodes[i]), node);
 	}
-	rewriter->table->localVarIndex -= n->block.variableCount;
 	return node;
 }
 
@@ -300,15 +336,17 @@ AST* rewrite(Rewriter* rewriter, AST* ast){
 
 VariableTable* newVariableTable(int globalCount){
 	VariableTable* table = (VariableTable*)malloc(sizeof(VariableTable));
-	table->localVariables = (char**)malloc(sizeof(char*));
-	table->globalVariables = (char**)malloc(sizeof(char*)*globalCount);
+	table->localVariables = (String**)malloc(sizeof(String*));
+	table->globalVariables = (String**)malloc(sizeof(String*)*globalCount);
+	table->localCount = 0;
+	table->globalCount = globalCount;
 }
 
-Rewriter* newRewriter(Parser* parser){
+Rewriter* newRewriter(AST* ast, int globalCount){
 	Rewriter* rewriter = (Rewriter*)malloc(sizeof(Rewriter));
 	rewriter->rewrittenAST = newAST();
-	rewriter->ast = parser->ast;
-	rewriter->table = newVariableTable(parser->globalCount);
+	rewriter->ast = ast;
+	rewriter->table = newVariableTable(globalCount);
 	return rewriter;
 }
 
