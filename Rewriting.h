@@ -22,8 +22,6 @@ typedef struct{
 	VariableTable* table;
 	AST* ast;
 	AST* rewrittenAST;
-	String** localVariables;
-	String** globalVariables;
 }Rewriter;
 
 Rewriter* newRewriter(AST* ast, int globalCount);

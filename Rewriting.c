@@ -1,5 +1,9 @@
 #include "Rewriting.h"
 
+//Finish loop rewriting
+//Add loop backend
+//test, test, test!
+
 //1.) for {...} -> for true { ... } 
 //2.) for int_expr -> {let count = 0; while count < int_expr{ LOOP_BODY } count += 1;} 
 //3.) for n1; n2; n3 { ... } 
@@ -43,6 +47,7 @@ String* newString(char* id){
 	String* s = malloc(sizeof(String));
 	s->length = strlen(id);
 	s->size = s->length+1;
+	s->str = id;
 	return s;
 }
 
@@ -70,28 +75,53 @@ void emitGlobal(VariableTable* t, char* id){
 	t->globalCount++;
 }
 
-void addChar(char* str, char* currentString, int index){
-	if(index < strlen(str)){
-		//if char at index is not a -> add b-
-		//else add b
-		if(str[index] == currentString[index]){
-			
-		}
-	}
-	else if(strlen(str) == strlen(currentString)){
-		//check with the string if it has one different character, keep the string
-		//else add a
-	}
+String* addNextLetter(String* str, char c){
+	//I know char is A-Z, _, 0-9, a-z
+	if((c != 'Z') && (c != '9') && (c != '_') && (c != 'z')) append(str, c+1);
+	else append(str, 'A');
+	return str;
 }
 
-char* uniqueID(VariableTable* table){
-	//probably need helpers...
-	
-	
-	//go through globals
-	//go through locals
-	//
-	return NULL;
+String* uniqueID(VariableTable* t){
+	int pos = 0;
+	String* str = (String*)malloc(sizeof(String));
+	str->str[0] = '\0';
+	/*
+	Algorithm:
+		if the current pos is less than the current string, add a new letter
+		if the pos == length-1, strings are same length, compare them
+			- if they are the same add a letter
+			- if they are different, move on to the next id
+	*/
+	for(int i = 0; i < t->globalCount; i++){
+		if(t->globalVariables[i]->length < pos){
+			addNextLetter(t->globalVariables[i], t->globalVariables[i]->str[pos]);
+			pos+=1;
+		}
+		else if(t->globalVariables[i]->length-1 == pos){
+			if(strcmp(t->globalVariables[i]->str, str->str)==0){
+				append(str, 'A');
+				pos += 1;
+			}
+			else continue;
+		}
+		else continue;
+	}
+	for(int i = 0; i < t->localCount; i++){
+		if(t->localVariables[i]->length < pos){
+			addNextLetter(t->localVariables[i], t->localVariables[i]->str[pos]);
+			pos+=1;
+		}
+		else if(t->localVariables[i]->length-1 == pos){
+			if(strcmp(t->localVariables[i]->str, str->str)==0){
+				append(str, 'A');
+				pos += 1;
+			}
+			else continue;
+		}
+		else continue;
+	}
+	return str;
 }
 
 char** resizeVariables(char** variables, int cappacity){
@@ -246,7 +276,7 @@ ASTNode* rewriteGlobalVariable(Rewriter* rewriter, ASTNode* n){
 	var.t = n->globalVar.t;
 	node->globalVar = var;
 	node->type = ASTGlobalVariable_NODE_TYPE;
-	emitGlobal(rewriter->table, n->globalVar.id);
+	//emitGlobal(rewriter->table, n->globalVar.id);
 	return node;
 }
 ASTNode* rewriteLocalVariable(Rewriter* rewriter, ASTNode* n){
@@ -265,15 +295,19 @@ ASTNode* rewriteBlock(Rewriter* rewriter, ASTNode* n){
 	ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
 	ASTBlock b;
 	b.variableCount = n->block.variableCount;
-	b.cappacity = n->block.cappacity;
-	b.numberOfNodes = n->block.numberOfNodes;
+	b.cappacity = 1;//new cappacity
+	b.numberOfNodes = 0;//new numebr of nodes
 	b.nodes = (ASTNode*)malloc(sizeof(ASTNode));
 	b.t = n->block.t;
 	b.line = n->block.line;
 	node->block = b;
 	node->type = ASTBlock_NODE_TYPE;
 	for(int i = 0; i < n->block.numberOfNodes; i++){
+		//printf("tried\n");
+		//fflush(stdout);
 		emitNodeToBlock(rewriteNode(rewriter, &n->block.nodes[i]), node);
+		//printf("completed\n");
+		//fflush(stdout);
 	}
 	return node;
 }
@@ -339,7 +373,7 @@ VariableTable* newVariableTable(int globalCount){
 	table->localVariables = (String**)malloc(sizeof(String*));
 	table->globalVariables = (String**)malloc(sizeof(String*)*globalCount);
 	table->localCount = 0;
-	table->globalCount = globalCount;
+	table->globalCount = 0;
 }
 
 Rewriter* newRewriter(AST* ast, int globalCount){

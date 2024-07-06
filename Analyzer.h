@@ -5,14 +5,8 @@
 #include "Common.h"
 #include "ScopeChain.h"
 
-typedef enum {
-	TYPE_MISMATCH_ERROR,
-	UNDECLARED_ERROR,
-	REDECLARATION_ERROR,
-} ErrorType;
-
 typedef struct {
-	ErrorType type;
+	Type type;
 	char* message;
 	long line;
 	char** names;

@@ -619,6 +619,7 @@ void emitNode(ASTNode* node, AST* ast){
 		ast->nodes = resizeNodes(ast->nodes, ast->cappacity);
 		ast->cappacity *= 2;
 	}
+
 }
 
 void emitNodeToBlock(ASTNode* node, ASTNode* b){
@@ -859,6 +860,11 @@ ASTNode* parseFor(Parser* parser, TokenArray* tokens){
 	/*parseLocal(parser, b, tokens);
 	closeScope(parser->scopes);
 	loop->loop.b = b;*/
+	
+	//Scope resolution
+	if(loop->loop.n1 != NULL && loop->loop.n1->type == ASTLocalVariable_NODE_TYPE) addToCurrentScope(parser->scopes, loop->loop.n1->localVar.id, -1, -1);
+	if(loop->loop.n2 != NULL && loop->loop.n2->type == ASTLocalVariable_NODE_TYPE) addToCurrentScope(parser->scopes, loop->loop.n2->localVar.id, -1, -1);
+	if(loop->loop.n3 != NULL && loop->loop.n3->type == ASTLocalVariable_NODE_TYPE) addToCurrentScope(parser->scopes, loop->loop.n3->localVar.id, -1, -1);
 	advance(tokens);
 	while(tokens->tokens->type != RC_BRACKET_TOKEN){
 		parseLocal(parser, b, tokens);

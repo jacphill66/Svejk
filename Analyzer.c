@@ -1,6 +1,6 @@
 #include "Analyzer.h"
 
-Error* newError(ErrorType type, char* message, long line){
+Error* newError(Type type, char* message, long line){
 	Error* error = (Error*) malloc(sizeof(Error));
 	error->type = type;
 	error->message = message;
@@ -38,11 +38,23 @@ ErrorArray* initErrorArray(){
 }
 
 Type analyzePrint(Analyzer* a, ErrorArray* errors, ASTPrint* p){
-	return analyzeNode(a, errors, p->expr);
+	Type t = analyzeNode(a, errors, p->expr);
+	if(t == TYPE_MISMATCH_ERROR_TYPE){
+		char* errorMsg;
+		strcpy(errorMsg, "Print Statement");
+		emitError(errors, newError(TYPE_MISMATCH_ERROR_TYPE, errorMsg, p->line));
+	}
+	return t;
 }
 
 Type analyzeExpression(Analyzer* a, ErrorArray* errors, ASTExpression* expr){
-	return analyzeNode(a, errors, expr->expr);
+	Type t = analyzeNode(a, errors, expr->expr);
+	if(t == TYPE_MISMATCH_ERROR_TYPE){
+		char* errorMsg;
+		strcpy(errorMsg, "Expression");
+		emitError(errors, newError(TYPE_MISMATCH_ERROR_TYPE, errorMsg, expr->line));
+	}
+	return t;
 }
 
 Type analyzeBinary(Analyzer* a, ErrorArray* errors, ASTBinaryOP* binOP){
@@ -56,19 +68,19 @@ Type analyzeBinary(Analyzer* a, ErrorArray* errors, ASTBinaryOP* binOP){
 			if(t1 == I32_TYPE && t2 == I32_TYPE) return I32_TYPE;
 			else if(t1 == F32_TYPE) if(t2 == F32_TYPE || t2 == I32_TYPE) return F32_TYPE;
 			else if(t2 == F32_TYPE) if(t1 == F32_TYPE || t1 == I32_TYPE) return F32_TYPE;	
-			else return ERROR_TYPE;
+			else return TYPE_MISMATCH_ERROR_TYPE;
 		}
 		case REM_OP:{
 			if(t1 == I32_TYPE && t2 == I32_TYPE) return I32_TYPE;
-			else return ERROR_TYPE;
+			else return TYPE_MISMATCH_ERROR_TYPE;
 		}
 		case AND_OP:
 		case OR_OP:{
 			if(t1 == BOOL_TYPE && t2 == BOOL_TYPE) return BOOL_TYPE;
-			else return ERROR_TYPE;
+			else return TYPE_MISMATCH_ERROR_TYPE;
 		}
 		default:{
-			return ERROR_TYPE;
+			return TYPE_MISMATCH_ERROR_TYPE;
 		}	
 		//case custom op ...
 	}
@@ -80,18 +92,18 @@ Type analyzeUnary(Analyzer* a, ErrorArray* errors, ASTUnaryOP* unOP){
 		case PLUS_OP:
 		case SUB_OP:{
 			if(t == I32_TYPE || t == F32_TYPE) return t;
-			else return ERROR_TYPE;
+			else return TYPE_MISMATCH_ERROR_TYPE;
 		}
 		case FACT_OP:{
 			if(t == I32_TYPE) return I32_TYPE;			
-			else return ERROR_TYPE;
+			else return TYPE_MISMATCH_ERROR_TYPE;
 		}
 		case NOT_OP:{
 			if(t == BOOL_TYPE) return BOOL_TYPE;
-			else return ERROR_TYPE;
+			else return TYPE_MISMATCH_ERROR_TYPE;
 		}
 		default:{
-			return ERROR_TYPE;
+			return TYPE_MISMATCH_ERROR_TYPE;
 		}	
 	}
 }
@@ -102,7 +114,7 @@ Type analyzeValue(Analyzer* a, ErrorArray* errors, ASTValue* v){
 		case F32_VAL: return F32_TYPE;
 		case STR_VAL: return STR_TYPE;
 		case BOOL_VAL: return BOOL_TYPE;
-		default: return ERROR_TYPE;
+		default: return TYPE_MISMATCH_ERROR_TYPE;
 	}
 }
 
@@ -114,7 +126,7 @@ Type analyzeGlobalVariable(Analyzer* a, ErrorArray* errors, ASTGlobalVariable* v
 			size_t size = snprintf(NULL, 0, "Global Variable Declaration \"%s\"", var->id) + 1;
 			char* errorMsg = (char*)malloc(size);
 			snprintf(errorMsg, size, "Global Variable Declaration \"%s\"", var->id);
-			emitError(errors, newError(TYPE_MISMATCH_ERROR, errorMsg, var->line));
+			emitError(errors, newError(TYPE_MISMATCH_ERROR_TYPE, errorMsg, var->line));
 		}
 	}
 	Value v;
@@ -124,7 +136,7 @@ Type analyzeGlobalVariable(Analyzer* a, ErrorArray* errors, ASTGlobalVariable* v
 		size_t size = snprintf(NULL, 0, "Global Variable Declaration \"%s\"", var->id) + 1;
 		char* errorMsg = (char*)malloc(size);
 		snprintf(errorMsg, size, "Global Variable Declaration \"%s\"", var->id);
-		emitError(errors, newError(REDECLARATION_ERROR, errorMsg, var->line));
+		emitError(errors, newError(REDECLARATION_ERROR_TYPE, errorMsg, var->line));
 	}
 	else set(a->globalVarTypes, var->id, -1, v);
 	//id size
@@ -148,7 +160,7 @@ Type analyzeLocalVariable(Analyzer* a, ErrorArray* errors, ASTLocalVariable* var
 		size_t size = snprintf(NULL, 0, "Local Variable Declaration \"%s\"", var->id) + 1;
 		char* errorMsg = (char*)malloc(size);
 		snprintf(errorMsg, size, "Local Variable Declaration \"%s\"", var->id);
-		if(var->type != t) emitError(errors, newError(TYPE_MISMATCH_ERROR, errorMsg, var->line));
+		if(var->type != t) emitError(errors, newError(TYPE_MISMATCH_ERROR_TYPE, errorMsg, var->line));
 	}
 	Value v;
 	v.type = I32_VAL;
@@ -157,7 +169,7 @@ Type analyzeLocalVariable(Analyzer* a, ErrorArray* errors, ASTLocalVariable* var
 		size_t size = snprintf(NULL, 0, "Local Variable Declaration \"%s\"", var->id) + 1;
 		char* errorMsg = (char*)malloc(size);
 		snprintf(errorMsg, size, "Local Variable Declaration \"%s\"", var->id);
-		emitError(errors, newError(REDECLARATION_ERROR, errorMsg, var->line));
+		emitError(errors, newError(REDECLARATION_ERROR_TYPE, errorMsg, var->line));
 	}
 	else addToCurrentScope(a->localVarTypes, var->id, -1, t);
 	return t;
@@ -169,7 +181,7 @@ Type analyzeLocalVariableReference(Analyzer* a, ErrorArray* errors, ASTLocalID* 
 		size_t size = snprintf(NULL, 0, "Variable Reference \"%s\"", id->id) + 1;
 		char* errorMsg = (char*)malloc(size);
 		snprintf(errorMsg, size, "Variable Reference \"%s\"", id->id);
-		emitError(errors, newError(UNDECLARED_ERROR, errorMsg, id->line));
+		emitError(errors, newError(UNDECLARED_ERROR_TYPE, errorMsg, id->line));
 	}
 	return t;
 }
@@ -180,7 +192,7 @@ Type analyzeGlobalVariableReference(Analyzer* a, ErrorArray* errors, ASTGlobalID
 		size_t size = snprintf(NULL, 0, "Variable Reference \"%s\"", id->id) + 1;
 		char* errorMsg = (char*)malloc(size);
 		snprintf(errorMsg, size, "Variable Reference \"%s\"", id->id);
-		emitError(errors, newError(UNDECLARED_ERROR, errorMsg, id->line));
+		emitError(errors, newError(UNDECLARED_ERROR_TYPE, errorMsg, id->line));
 	}
 	return t;
 }
@@ -191,14 +203,14 @@ Type analyzeGlobalAssignment(Analyzer* a, ErrorArray* errors, ASTGlobalAssignmen
 		size_t size = snprintf(NULL, 0, "Variable Assignment \"%s\"", ass->id) + 1;
 		char* errorMsg = (char*)malloc(size);
 		snprintf(errorMsg, size, "Variable Assignment \"%s\"", ass->id);
-		emitError(errors, newError(UNDECLARED_ERROR, errorMsg, ass->line));
-		return ERROR_TYPE;
+		emitError(errors, newError(UNDECLARED_ERROR_TYPE, errorMsg, ass->line));
+		return UNDECLARED_ERROR_TYPE;
 	}
 	if(t != get(a->globalVarTypes, ass->id).i32){
 		size_t size = snprintf(NULL, 0, "Global Variable Assignment \"%s\"", ass->id) + 1;
 		char* errorMsg = (char*)malloc(size);
 		snprintf(errorMsg, size, "Global Variable Assignment \"%s\"", ass->id);
-		emitError(errors, newError(TYPE_MISMATCH_ERROR, errorMsg, ass->line));
+		emitError(errors, newError(TYPE_MISMATCH_ERROR_TYPE, errorMsg, ass->line));
 	}
 	return t;
 }
@@ -209,14 +221,14 @@ Type analyzeLocalAssignment(Analyzer* a, ErrorArray* errors, ASTLocalAssignment*
 		size_t size = snprintf(NULL, 0, "Variable Assignment \"%s\"", ass->id) + 1;
 		char* errorMsg = (char*)malloc(size);
 		snprintf(errorMsg, size, "Variable Assignment \"%s\"", ass->id);
-		emitError(errors, newError(UNDECLARED_ERROR, errorMsg, ass->line));
-		return ERROR_TYPE;
+		emitError(errors, newError(UNDECLARED_ERROR_TYPE, errorMsg, ass->line));
+		return UNDECLARED_ERROR_TYPE;
 	}
 	if(t != searchScopes(a->localVarTypes, ass->id)){
 		size_t size = snprintf(NULL, 0, "Local Variable Assignment \"%s\"", ass->id) + 1;
 		char* errorMsg = (char*)malloc(size);
 		snprintf(errorMsg, size, "Local Variable Assignment \"%s\"", ass->id);
-		emitError(errors, newError(TYPE_MISMATCH_ERROR, errorMsg, ass->line));
+		emitError(errors, newError(TYPE_MISMATCH_ERROR_TYPE, errorMsg, ass->line));
 	}
 	return t;
 }
@@ -233,6 +245,40 @@ Type analyzeBlock(Analyzer* a, ErrorArray* errors, ASTBlock* b){
 Type analyzeString(Analyzer* a, ErrorArray* errors, ASTString* str){
 	return STR_TYPE;
 }
+
+Type analyzeLoop(Analyzer* a, ErrorArray* errors, ASTForLoop* loop){
+	//figure out the type, then type check it, append types
+	//if(){}
+	if(loop->n1 != NULL){
+		if(loop->n2 == NULL){
+			Type t = analyzeNode(a, errors, loop->n1);
+			if(t == TYPE_MISMATCH_ERROR_TYPE){
+				char* errorMsg;
+				strcpy(errorMsg, "For Statement");
+				emitError(errors, newError(TYPE_MISMATCH_ERROR_TYPE, errorMsg, loop->line));
+			}
+		}
+		else{
+			analyzeNode(a, errors, loop->n2);
+			analyzeNode(a, errors, loop->n3);
+		}
+		//for-in loop, later...
+	}
+	if(loop->min != NULL) if(analyzeNode(a, errors, loop->min) != I32_TYPE){
+		char* errorMsg;
+		char* msg = "Loop Minimum";
+		strcpy(errorMsg, msg);
+		emitError(errors, newError(TYPE_MISMATCH_ERROR_TYPE, errorMsg, loop->line));
+	}
+	if(loop->max != NULL) if(analyzeNode(a, errors, loop->min) != I32_TYPE){
+		char* errorMsg;
+		char* msg = "Loop Maximum";
+		strcpy(errorMsg, msg);
+		emitError(errors, newError(TYPE_MISMATCH_ERROR_TYPE, errorMsg, loop->line));
+	}
+	analyzeNode(a, errors, loop->b);
+	return 0;
+}	
 
 Type analyzeNode(Analyzer* a, ErrorArray* errors, ASTNode* n){
 	switch(n->type){
@@ -306,7 +352,7 @@ Type analyzeNode(Analyzer* a, ErrorArray* errors, ASTNode* n){
 			exit(1);
 		}
 	}
-	return ERROR_TYPE;
+	return TYPE_MISMATCH_ERROR_TYPE;
 }
 
 
@@ -324,15 +370,15 @@ void printError(Error* error){
 	//it depends on the type
 	//clean this up
 	switch(error->type){
-		case TYPE_MISMATCH_ERROR :{
+		case TYPE_MISMATCH_ERROR_TYPE :{
 			printf("[Type Mismatch Error]: %s Line:%ld\n", error->message, error->line);
 			break;
 		}
-		case UNDECLARED_ERROR :{
+		case UNDECLARED_ERROR_TYPE :{
 			printf("[Undeclared Variable Error]: %s Line:%ld\n", error->message, error->line);
 			break;
 		}
-		case REDECLARATION_ERROR :{
+		case REDECLARATION_ERROR_TYPE :{
 			printf("[Redeclaration Variable Error]: %s Line:%ld\n", error->message, error->line);	
 			break;			
 		}

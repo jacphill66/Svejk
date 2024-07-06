@@ -11,7 +11,7 @@
 #include <time.h>
 #include "Table.h"
 #include "Analyzer.h"
-
+#include "Rewriting.h"
 int main();
 
 #endif
