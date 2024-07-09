@@ -79,6 +79,13 @@ Type analyzeBinary(Analyzer* a, ErrorArray* errors, ASTBinaryOP* binOP){
 			if(t1 == BOOL_TYPE && t2 == BOOL_TYPE) return BOOL_TYPE;
 			else return TYPE_MISMATCH_ERROR_TYPE;
 		}
+		case LESS_OP:
+		case GREATER_OP:
+		case LOE_OP:
+		case GOE_OP:{
+			if((t1 == I32_TYPE || t1 == F32_TYPE) && (t2 == I32_TYPE || t2 == F32_TYPE)) return BOOL_TYPE;
+			else return TYPE_MISMATCH_ERROR_TYPE;		
+		}
 		default:{
 			return TYPE_MISMATCH_ERROR_TYPE;
 		}	
@@ -249,16 +256,15 @@ Type analyzeString(Analyzer* a, ErrorArray* errors, ASTString* str){
 Type analyzeLoop(Analyzer* a, ErrorArray* errors, ASTForLoop* loop){
 	//figure out the type, then type check it, append types
 	//if(){}
+	newScope(a->localVarTypes);
 	if(loop->n1 != NULL){
-		if(loop->n2 == NULL){
-			Type t = analyzeNode(a, errors, loop->n1);
-			if(t == TYPE_MISMATCH_ERROR_TYPE){
-				char* errorMsg;
-				strcpy(errorMsg, "For Statement");
-				emitError(errors, newError(TYPE_MISMATCH_ERROR_TYPE, errorMsg, loop->line));
-			}
+		Type t = analyzeNode(a, errors, loop->n1);
+		if(t == TYPE_MISMATCH_ERROR_TYPE || (t != BOOL_TYPE && t != I32_TYPE)){
+			char errorMsg[14];
+			strcpy(errorMsg, "For Statement");
+			emitError(errors, newError(TYPE_MISMATCH_ERROR_TYPE, errorMsg, loop->line));
 		}
-		else{
+		if(loop->n2 != NULL){
 			analyzeNode(a, errors, loop->n2);
 			analyzeNode(a, errors, loop->n3);
 		}
@@ -270,13 +276,16 @@ Type analyzeLoop(Analyzer* a, ErrorArray* errors, ASTForLoop* loop){
 		strcpy(errorMsg, msg);
 		emitError(errors, newError(TYPE_MISMATCH_ERROR_TYPE, errorMsg, loop->line));
 	}
-	if(loop->max != NULL) if(analyzeNode(a, errors, loop->min) != I32_TYPE){
+	if(loop->max != NULL) if(analyzeNode(a, errors, loop->max) != I32_TYPE){
 		char* errorMsg;
 		char* msg = "Loop Maximum";
 		strcpy(errorMsg, msg);
 		emitError(errors, newError(TYPE_MISMATCH_ERROR_TYPE, errorMsg, loop->line));
 	}
+	newScope(a->localVarTypes);
 	analyzeNode(a, errors, loop->b);
+	closeScope(a->localVarTypes);
+	closeScope(a->localVarTypes);
 	return 0;
 }	
 
@@ -346,6 +355,11 @@ Type analyzeNode(Analyzer* a, ErrorArray* errors, ASTNode* n){
 			Type t = analyzeString(a, errors, &n->str);
 			n->str.t = t;
 			return t;
+		}
+		case ASTForLoop_NODE_TYPE:{
+			Type t = analyzeLoop(a, errors, &n->loop);
+			n->loop.t = t;
+			return t;			
 		}
 		default : {
 			printf("Cannot analyze node of given type: %d", n->type);

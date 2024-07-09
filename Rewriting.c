@@ -1,5 +1,8 @@
 #include "Rewriting.h"
 
+//Line number is deprecated and can't realistically be restored 
+//Type is deprecated but can be restored
+
 //Finish loop rewriting
 //Add loop backend
 //test, test, test!
@@ -24,9 +27,32 @@ Generated String: bbaa
 
 If:
 bbaa
+//printASTNode(rewriter->rewrittenAST, binOP);
+	//exit(1);
+	
+	//ASTNode* expr = (ASTNode*)malloc(sizeof(ASTNode));
+	//expr->type = ASTExpression_NODE_TYPE;
+	//ASTExpression expr2;
+	//expr2.expr = binOP;	
+	//ASTNode* var = uniqueVariable(rewriter->table, expr);
+	//emitNodeToBlock(var, b);
+	//do the loop, emit it
+	//new block 
+	//add 
+	//{
+	//let id = 0;
+	//for id < expr {b}
+	//}
+	/*nLoop.simpleLoop.expr = loop->loop.n1;
+	nLoop.simpleLoop.block = loop->loop.b;
+	ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
+	node->type = ASTValue_NODE_TYPE;
+	Value v;
+	v.type = BOOL_VAL;
+	v.boolean = true;
+	node->value.v = v;
+	node->value.line = loop->loop.line;*/
 
-
-*/
 //When you make a new variable you need to find a place for it.
 //Also need to adjust every variable after it by one
 //resize a string function...
@@ -85,7 +111,11 @@ String* addNextLetter(String* str, char c){
 String* uniqueID(VariableTable* t){
 	int pos = 0;
 	String* str = (String*)malloc(sizeof(String));
+	str->str = (char*)malloc(sizeof(char));
 	str->str[0] = '\0';
+	str->size = 1;
+	str->length = 0;
+	
 	/*
 	Algorithm:
 		if the current pos is less than the current string, add a new letter
@@ -94,34 +124,59 @@ String* uniqueID(VariableTable* t){
 			- if they are different, move on to the next id
 	*/
 	for(int i = 0; i < t->globalCount; i++){
-		if(t->globalVariables[i]->length < pos){
-			addNextLetter(t->globalVariables[i], t->globalVariables[i]->str[pos]);
+		
+		if(t->globalVariables[i]->length > pos){
+			addNextLetter(str, t->globalVariables[i]->str[pos]);
 			pos+=1;
 		}
-		else if(t->globalVariables[i]->length-1 == pos){
+		else{
 			if(strcmp(t->globalVariables[i]->str, str->str)==0){
-				append(str, 'A');
-				pos += 1;
+				char c = str->str[str->length-1];
+				if((c != 'Z') && (c != '9') && (c != '_') && (c != 'z')) str->str[str->length-1] = c+1;
+				else {
+					append(str, 'A');
+					pos += 1;
+				}
 			}
 			else continue;
 		}
-		else continue;
 	}
 	for(int i = 0; i < t->localCount; i++){
-		if(t->localVariables[i]->length < pos){
-			addNextLetter(t->localVariables[i], t->localVariables[i]->str[pos]);
+		if(t->localVariables[i]->length > pos){
+			addNextLetter(str, t->localVariables[i]->str[pos]);
 			pos+=1;
 		}
-		else if(t->localVariables[i]->length-1 == pos){
+		else{
 			if(strcmp(t->localVariables[i]->str, str->str)==0){
-				append(str, 'A');
-				pos += 1;
+				char c = str->str[str->length-1];
+				if((c != 'Z') && (c != '9') && (c != '_') && (c != 'z')) str->str[str->length-1] = c+1;
+				else {
+					append(str, 'A');
+					pos += 1;
+				}
 			}
 			else continue;
 		}
-		else continue;
+	}
+	if(str->length < 1){
+		append(str, 'A');
 	}
 	return str;
+}
+
+ASTNode* uniqueVariable(VariableTable* t, ASTNode* expr){
+	ASTNode* n = (ASTNode*)malloc(sizeof(ASTNode));
+	ASTLocalVariable var;
+	var.id = uniqueID(t)->str;
+	printf("%s\n", var.id);
+	var.expr = expr;
+	var.line = -3;
+	var.type = -3;
+	var.offset = -3;
+	var.t = -3;
+	n->localVar = var;
+	emitLocal(t, var.id);
+	return n;
 }
 
 char** resizeVariables(char** variables, int cappacity){
@@ -135,34 +190,104 @@ char** resizeVariables(char** variables, int cappacity){
 }
 
 
-void rewriteLoopType1(ASTNode* loop){
-	ASTNode nLoop;
-	nLoop.simpleLoop.expr = NULL;
-	nLoop.simpleLoop.block = NULL;
+ASTNode* rewriteLoopType1(Rewriter* rewriter,ASTNode* loop){
+	//missing line and type information
+	ASTLoop simpleLoop;
+	ASTNode* expr = (ASTNode*)malloc(sizeof(ASTNode));
+	expr->type = ASTExpression_NODE_TYPE;
+	ASTNode* val = (ASTNode*)malloc(sizeof(ASTNode));
+	val->type = ASTValue_NODE_TYPE;
+	val->value.v.type = BOOL_VAL;
+	val->value.v.boolean = true;
+	ASTExpression expr2;
+	expr2.expr = val;
+	expr->expr = expr2;
+	simpleLoop.expr = expr;
+	simpleLoop.block = loop->loop.b;
 	ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
-	/*node->type = ASTValue_NODE_TYPE;
-	Value v;
-	v.type = BOOL_VAL;
-	v.boolean = true;
-	node->value.v = v;
-	node->value.line = loop.loop.line;
-	nLoop.simpleLoop.expr = node;
-	nLoop.simpleLoop.block = loop.loop.b;*/
+	node->simpleLoop = simpleLoop;
+	node->simpleLoop.line = loop->loop.line;
+	node->type = ASTLoop_NODE_TYPE;
+	return node;
 }
 
-void rewriteLoop(ASTNode* loop){
+ASTNode* rewriteLoopType2(Rewriter* rewriter,ASTNode* loop){
+	//missing line and type information
+	ASTLoop nLoop;
+	nLoop.expr = loop->loop.n1;
+	nLoop.block = loop->loop.b;
+	ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
+	node->type = ASTLoop_NODE_TYPE;
+	node->simpleLoop = nLoop;
+	return node;
+}
+
+ASTNode* rewriteLoopType3(Rewriter* rewriter, ASTNode* loop){
+	//for expr { ... } -> { let id = expr; for 0 < id { ... } }
+	ASTNode* b = newBlock();
+	
+	//Build zero expression
+	ASTNode* val = (ASTNode*)malloc(sizeof(ASTValue));
+	val->type = ASTValue_NODE_TYPE;
+	val->value.v.type = I32_VAL;
+	val->value.v.i32 = 0;
+	ASTNode* zero = (ASTNode*)malloc(sizeof(ASTValue));
+	ASTExpression e;
+	e.expr = val;
+	zero->expr = e;
+	zero->type = ASTExpression_NODE_TYPE;
+	
+	ASTNode* var = uniqueVariable(rewriter->table, zero);
+	var->type = ASTLocalVariable_NODE_TYPE;
+	ASTNode* refToVar = (ASTNode*)malloc(sizeof(ASTNode));
+	refToVar->type = ASTLocalID_NODE_TYPE;
+	ASTLocalID local;
+	local.id = var->localVar.id;
+	refToVar->localID = local;
+
+	
+	ASTNode* binOP = (ASTNode*)malloc(sizeof(ASTNode));
+	binOP->type = ASTBinaryOP_NODE_TYPE;
+	ASTBinaryOP binOP2;
+	binOP2.lhs = zero;
+	binOP2.op = LESS_OP;
+	binOP2.rhs = refToVar;//ref to var
+	binOP->binaryOP = binOP2;
+	ASTNode* cond = (ASTNode*)malloc(sizeof(ASTNode));
+	ASTExpression e2;
+	e2.expr = binOP;
+	cond->expr = e2;
+	cond->type = ASTExpression_NODE_TYPE;
+	emitNodeToBlock(var, b);
+
+	ASTNode* newLoop = (ASTNode*)malloc(sizeof(ASTNode));
+	newLoop->type = ASTLoop_NODE_TYPE;
+	ASTLoop nLoop;
+	nLoop.expr = cond;
+	nLoop.block = loop->loop.b;
+	newLoop->simpleLoop = nLoop;
+
+	emitNodeToBlock(newLoop, b);
+	return b;
+}
+
+ASTNode* rewriteForLoop(Rewriter* rewriter, ASTNode* loop){
 	ASTNode* first = loop->loop.n1;
 	if(first == NULL){
-		return rewriteLoopType1(loop);
+		return rewriteLoopType1(rewriter, loop);
 	}
 	else {
-		if((first->type == ASTExpression_NODE_TYPE) && (first->expr.t == I32_TYPE)){
-			ASTBlock b;
-
+		if(loop->loop.n2 == NULL){
+			if((first->type == ASTExpression_NODE_TYPE) && (first->expr.t == I32_TYPE))return rewriteLoopType3(rewriter, loop);
+			else return rewriteLoopType2(rewriter, loop);
+		}
+		else{
+		
 		}
 		//else{
 	}
 	ASTNode n;
+	return NULL;
 }
 
 ASTNode* rewritePrint(Rewriter* rewriter, ASTNode* n){
@@ -276,7 +401,7 @@ ASTNode* rewriteGlobalVariable(Rewriter* rewriter, ASTNode* n){
 	var.t = n->globalVar.t;
 	node->globalVar = var;
 	node->type = ASTGlobalVariable_NODE_TYPE;
-	//emitGlobal(rewriter->table, n->globalVar.id);
+	emitGlobal(rewriter->table, n->globalVar.id);
 	return node;
 }
 ASTNode* rewriteLocalVariable(Rewriter* rewriter, ASTNode* n){
@@ -302,13 +427,7 @@ ASTNode* rewriteBlock(Rewriter* rewriter, ASTNode* n){
 	b.line = n->block.line;
 	node->block = b;
 	node->type = ASTBlock_NODE_TYPE;
-	for(int i = 0; i < n->block.numberOfNodes; i++){
-		//printf("tried\n");
-		//fflush(stdout);
-		emitNodeToBlock(rewriteNode(rewriter, &n->block.nodes[i]), node);
-		//printf("completed\n");
-		//fflush(stdout);
-	}
+	for(int i = 0; i < n->block.numberOfNodes; i++) emitNodeToBlock(rewriteNode(rewriter, &n->block.nodes[i]), node);
 	return node;
 }
 
@@ -353,6 +472,9 @@ ASTNode* rewriteNode(Rewriter* rewriter, ASTNode* n){
 		case ASTBlock_NODE_TYPE:{
 			return rewriteBlock(rewriter, n);
 		}
+		case ASTForLoop_NODE_TYPE:{
+			return rewriteForLoop(rewriter, n);
+		}
 		default:{
 			printf("Cannot rewrite node of given type\n");
 			exit(1);
@@ -365,7 +487,7 @@ AST* rewrite(Rewriter* rewriter, AST* ast){
 	for(int i = 0; i < ast->numberOfNodes; i++){
 		emitNode(rewriteNode(rewriter, &ast->nodes[i]), rewriter->rewrittenAST);
 	}
-	return ast;
+	return rewriter->rewrittenAST;
 }
 
 VariableTable* newVariableTable(int globalCount){

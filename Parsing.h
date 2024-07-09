@@ -189,7 +189,7 @@ typedef struct {
 	long stringCount;	
 } Parser;
 
-
+ASTNode* newBlock();
 void emitNodeToBlock(ASTNode* node, ASTNode* b);
 
 ASTNode* newLoop();

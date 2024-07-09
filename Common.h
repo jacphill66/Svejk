@@ -78,6 +78,29 @@ typedef enum{
 	VOID_TYPE,
 }Type;
 
+/*typedef enum{
+	I32_TYPE,
+	F32_TYPE,
+	STR_TYPE,
+	BOOL_TYPE,
+	INFERRED_TYPE,
+	UNDECLARED_ERROR_TYPE,
+	REDECLARATION_ERROR_TYPE,
+	TYPE_MISMATCH_ERROR_TYPE,
+	VOID_TYPE,
+}TrivialType;
+
+typedef enum{
+	TrivialType_KIND,
+}TypeKind;
+
+typedef struct {
+	union {
+		TrivialType t;
+	};
+	TypeKind kind;
+} Type;*/
+
 typedef struct {
 	union {
 		int i32;

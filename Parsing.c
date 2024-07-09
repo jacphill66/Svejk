@@ -244,6 +244,7 @@ void printASTNode(AST* ast, ASTNode* node){
 			printf("{\n");
 			printASTNode(ast, node->simpleLoop.block);
 			printf("}");
+			break;
 		}
 		default : {
 			printf("Cannot print node of given type\n"); 
@@ -838,16 +839,22 @@ ASTNode* parseFor(Parser* parser, TokenArray* tokens){
 	loop->loop.line = t.line;
 	if((tokens->tokens->type != LC_BRACKET_TOKEN)&&(tokens->tokens->type != LS_BRACKET_TOKEN)){
 		loop->loop.n1 = parseStatement(parser, tokens, b);
+		if(loop->loop.n1->type == ASTLocalVariable_NODE_TYPE) addToCurrentScope(parser->scopes, loop->loop.n1->localVar.id, -1, -1);
 		if(tokens->tokens->type == IN_TOKEN){
+			//modify this later:
+				// need to add local to scope, among other things
+				// need to ensure the first parse statment will get a local id and need to deal with it
 			advance(tokens);
 			ASTNode* expr = parseExpression(tokens, parser);
 			loop->loop.n2 = expr;
-		}//later}
+		}
 		else if((tokens->tokens->type != LS_BRACKET_TOKEN)&&(tokens->tokens->type != LC_BRACKET_TOKEN)){
 			advance(tokens);
 			loop->loop.n2 = parseStatement(parser, tokens, b);
+			if(loop->loop.n2->type == ASTLocalVariable_NODE_TYPE) addToCurrentScope(parser->scopes, loop->loop.n2->localVar.id, -1, -1);
 			advance(tokens);
 			loop->loop.n3 = parseStatement(parser, tokens, b);
+			if(loop->loop.n3->type == ASTLocalVariable_NODE_TYPE) addToCurrentScope(parser->scopes, loop->loop.n3->localVar.id, -1, -1);
 		}
 	}
 	if(tokens->tokens->type == LS_BRACKET_TOKEN){
@@ -861,14 +868,16 @@ ASTNode* parseFor(Parser* parser, TokenArray* tokens){
 	closeScope(parser->scopes);
 	loop->loop.b = b;*/
 	
-	//Scope resolution
-	if(loop->loop.n1 != NULL && loop->loop.n1->type == ASTLocalVariable_NODE_TYPE) addToCurrentScope(parser->scopes, loop->loop.n1->localVar.id, -1, -1);
-	if(loop->loop.n2 != NULL && loop->loop.n2->type == ASTLocalVariable_NODE_TYPE) addToCurrentScope(parser->scopes, loop->loop.n2->localVar.id, -1, -1);
-	if(loop->loop.n3 != NULL && loop->loop.n3->type == ASTLocalVariable_NODE_TYPE) addToCurrentScope(parser->scopes, loop->loop.n3->localVar.id, -1, -1);
+	//Scope resolution - fix this, Need to have them in a scope, also need to ensure this is done before the statements are done
+
 	advance(tokens);
+	parser->scopeDepth += 1;
+	newScope(parser->scopes);
 	while(tokens->tokens->type != RC_BRACKET_TOKEN){
 		parseLocal(parser, b, tokens);
 	}
+	parser->scopeDepth -= 1;
+	closeScope(parser->scopes);
 	parser->scopeDepth -= 1;
 	closeScope(parser->scopes);
 	loop->loop.b = b;

@@ -18,7 +18,7 @@ int main(){
 	char* errorTest = "tests/Errors Test.txt";
 	char* inferenceTest = "tests/Inference Test.txt";
 	char* forTest = "tests/for Test.txt";
-	lex(tokens, localVariableTest);
+	lex(tokens, forTest);
 	printTokens(tokens);		
 	Parser* parser = newParser();
 	parse(parser, tokens);
@@ -32,7 +32,8 @@ int main(){
 	Rewriter* r = newRewriter(parser->ast, parser->globalCount);
 	AST* rewrittenAST = rewrite(r, parser->ast);
 	printAST(rewrittenAST);
-	//exit(1);
+	printf("Completed\n");
+	exit(1);
 	//exit(1);
 	//exit(1);
 	Compiler* c = newCompiler(parser->ast);
@@ -46,7 +47,13 @@ int main(){
 	
 	return 0;
 }
+//1.) Fix types in Analyzer
+//2.) Add loop rewriting rules
+//3.) Add backend for loops
 
+//design and implement conditional, data structures and heap, assignment=,
+
+//optimizer?
 //change analyzer to only have errors at the top level, so move the errors up to the statement level
 //if an expr is nested in a statement, catch it there
 //need different kinds of errors to return, not just error type
@@ -63,3 +70,4 @@ int main(){
 
 
 //Might need to gradually move to a type structure similar to ast node to accomodate bigger types... probably sooner the better...
+//Add new ast node functions for every single ast node
