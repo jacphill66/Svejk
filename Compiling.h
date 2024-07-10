@@ -36,6 +36,7 @@ typedef struct {
 	Program* prog;
 	ScopeChain* scopes;
 	int scopeDepth;
+	int opPos;
 } Compiler;
 
 Program* newProgram(int stringCount);

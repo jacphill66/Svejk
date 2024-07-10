@@ -46,7 +46,10 @@ typedef enum{
 	
 	SET_LOCAL_VAR_OP,
 	GET_LOCAL_VAR_OP,
-		
+	
+	JMP_BACK_OP,
+	JMP_ON_FALSE_OP,
+	
 }OPCode;
 
 typedef enum {

@@ -206,18 +206,21 @@ void printASTNode(AST* ast, ASTNode* node){
 			}
 			if(node->loop.n2 != NULL) {
 				if(node->loop.n3 == NULL){
+					/*// work this out...
 					printf(" in ");
 					printf("COLLECTION=[");
 					printASTNode(ast, node->loop.n2);
-					printf("] ");
+					printf("] ");*/
 				}
 				else{
 					printf("NODE2=[");
 					printASTNode(ast, node->loop.n2);
 					printf("] ");
-					printf("NODE3=[");
-					printASTNode(ast, node->loop.n3);
-					printf("]");
+					if(node->loop.n3 != NULL){
+						printf("NODE3=[");
+						printASTNode(ast, node->loop.n3);
+						printf("]");
+					}
 				}
 			}
 			printf("[");
@@ -841,9 +844,6 @@ ASTNode* parseFor(Parser* parser, TokenArray* tokens){
 		loop->loop.n1 = parseStatement(parser, tokens, b);
 		if(loop->loop.n1->type == ASTLocalVariable_NODE_TYPE) addToCurrentScope(parser->scopes, loop->loop.n1->localVar.id, -1, -1);
 		if(tokens->tokens->type == IN_TOKEN){
-			//modify this later:
-				// need to add local to scope, among other things
-				// need to ensure the first parse statment will get a local id and need to deal with it
 			advance(tokens);
 			ASTNode* expr = parseExpression(tokens, parser);
 			loop->loop.n2 = expr;
@@ -1005,7 +1005,7 @@ void freeASTNode(ASTNode* node){
 			break;
 		}
 		case ASTBlock_NODE_TYPE:{
-			for(long i = 0; i < node->block.numberOfNodes; i++) freeASTNode(&node->block.nodes[i]);
+			for(long i = 0; i < node->block.numberOfNodes; i++)	freeASTNode(&node->block.nodes[i]);
 			break;
 		}
 		case ASTLocalVariable_NODE_TYPE:{
@@ -1030,6 +1030,20 @@ void freeASTNode(ASTNode* node){
 			freeASTNode(node->globalAss.expr);
 			free(node->globalAss.expr);
 			//free(node->globalAss.id);
+			break;
+		}
+		case ASTForLoop_NODE_TYPE:{
+			if(node->loop.n1 != NULL) freeASTNode(node->loop.n1);
+			if(node->loop.n2 != NULL) freeASTNode(node->loop.n2);
+			if(node->loop.n3 != NULL) freeASTNode(node->loop.n3);
+			if(node->loop.max != NULL) freeASTNode(node->loop.min);
+			if(node->loop.max != NULL) freeASTNode(node->loop.max);
+			freeASTNode(node->loop.b);
+			break;
+		}
+		case ASTLoop_NODE_TYPE:{
+			freeASTNode(node->simpleLoop.expr);
+			freeASTNode(node->simpleLoop.block);
 			break;
 		}
 		default : {

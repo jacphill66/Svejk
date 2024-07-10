@@ -64,10 +64,11 @@ Type analyzeBinary(Analyzer* a, ErrorArray* errors, ASTBinaryOP* binOP){
 		case PLUS_OP:
 		case SUB_OP:
 		case MULT_OP:
+		case EXP_OP:
 		case DIV_OP:{
 			if(t1 == I32_TYPE && t2 == I32_TYPE) return I32_TYPE;
-			else if(t1 == F32_TYPE) if(t2 == F32_TYPE || t2 == I32_TYPE) return F32_TYPE;
-			else if(t2 == F32_TYPE) if(t1 == F32_TYPE || t1 == I32_TYPE) return F32_TYPE;	
+			else if(t1 == F32_TYPE) {if(t2 == F32_TYPE || t2 == I32_TYPE) return F32_TYPE;}
+			else if(t2 == F32_TYPE) {if(t1 == F32_TYPE || t1 == I32_TYPE) return F32_TYPE;}
 			else return TYPE_MISMATCH_ERROR_TYPE;
 		}
 		case REM_OP:{

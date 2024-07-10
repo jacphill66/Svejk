@@ -26,6 +26,7 @@ void emitOP(Compiler* c, OPCode op){
 	OPArray* ops = c->prog->ops;
 	ops->ops[ops->opCount] = op;
 	ops->opCount++;
+	c->opPos++;
 	if(ops->opCount == ops->cappacity){
 		ops->ops = resizeOPs(ops->ops, ops->cappacity);
 		ops->cappacity *= 2;
@@ -69,6 +70,7 @@ Compiler* newCompiler(AST* ast){
 	c->ast = ast;
 	c->scopes = newScopeChain();//redo local indexing because of rewriting
 	c->scopeDepth = 0;
+	c->opPos = 0;
 	return c;
 }
 
@@ -133,7 +135,7 @@ void compileASTLocalReference(Compiler* c, ASTLocalID* id){
 	emitOP(c, GET_LOCAL_VAR_OP);
 	int i = searchScopes(c->scopes, id->id);
 	if(i < 0) {
-		printf("Compiler Error");
+		printf("Compiler Error!");
 		exit(1);
 	}
 	emitOP(c, i);
@@ -171,6 +173,19 @@ void compileASTString(Compiler* c, ASTString* str){
 	emitOP(c, STR_VAL_OP);
 	emitOP(c, str->index);
 	c->prog->strings[str->index] = str->str;
+}
+
+void compileASTLoop(Compiler* c, ASTLoop* loop){
+	int startPos = c->opPos;
+	compileASTNode(c, loop->expr);
+	emitOP(c, JMP_ON_FALSE_OP);
+	emitOP(c, -1);
+	int index1 = c->opPos;
+	compileASTNode(c, loop->block);
+	int endPos = c->opPos;
+	emitOP(c, JMP_BACK_OP);
+	emitOP(c, startPos);
+	c->prog->ops->ops[index1-1] = c->opPos;
 }
 
 void compileASTNode(Compiler* c, ASTNode* node){
@@ -229,6 +244,10 @@ void compileASTNode(Compiler* c, ASTNode* node){
 		}
 		case ASTString_NODE_TYPE:{
 			compileASTString(c, &node->str);
+			break;
+		}
+		case ASTLoop_NODE_TYPE:{
+			compileASTLoop(c, &node->simpleLoop);
 			break;
 		}
 		default : {
@@ -425,8 +444,21 @@ void printOPS(Program* p){
 				printf("HALT");
 				break;
 			}
+			case JMP_BACK_OP:{
+				printf("JMP_BACK[");
+				i += 1;
+				printf("%d]", p->ops->ops[i]);
+				break;
+			}
+			case JMP_ON_FALSE_OP:{
+				printf("JMP_ON_FALSE[");
+				i += 1;
+				printf("%d]", p->ops->ops[i]);
+				break;
+			}
 			default: {
-				printf("Can't Print OP");
+				printf("Can't Print OP\n");
+				exit(1);
 				break;
 			}
 		}
