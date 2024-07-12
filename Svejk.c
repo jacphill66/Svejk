@@ -24,6 +24,9 @@ int main(){
 	parse(parser, tokens);
 	freeTokens(tokens);
 	printAST(parser->ast);
+	
+	//exit(1);
+	
 	Analyzer* analyzer = newAnalyzer(parser->globalCount);
 	analyze(analyzer, parser->ast);
 	printErrors(analyzer->errors);
@@ -38,10 +41,8 @@ int main(){
 	//exit(1);
 	Compiler* c = newCompiler(rewrittenAST);
 	compile(c, rewrittenAST);
-	printAST(parser->ast);
 	freeParser(parser);
 	printProgram(c->prog);
-	exit(1);
 
 	VM* vm = initVM(c->prog);
 	execute(vm);
@@ -55,27 +56,31 @@ int main(){
 
 /*
 TODO:
-Create new ASTObject functions
-Change Type to a struct
-Add Loop backend
-Add annotations and add them to ast objects
-Add optimizer for byte code 
-Add assignment ops and desugar them
-Add alpha type
-Develop and Add universal conditional statement
-Add break, continue, etc.
-Add this
-Add rewriting to print
-Add heap
-Add data structures
-Add functions
-Add multiple returns, named and default args, var args
-Add pure functions
-Add Big ints and arbitrary precision arithmetic
-change analyzer to only have errors at the top level, so move the errors up to the statement level
-if an expr is nested in a statement, catch it there
-need different kinds of errors to return, not just error type
-In rewriter and analyzer, don't pass ast node, pass the specific type
-Work and the Type System and Language as a whole
-ASTPrint should only print offsets with a flag parameter set - not that important
+	Features:
+		Add this
+		Add Macros
+		Add break, continue, etc.
+		Add alpha type
+		Match, if-else, ...
+		Add functions
+		Add pure functions
+		Add Big ints and arbitrary precision arithmetic
+		Add data structures
+		Add multiple returns, named and default args, var args
+		Add assignment ops and desugar them
+		Add ADTs and Classes
+		Concurrency, Parallelism
+		Parametric Polymorphism
+
+	Cleaning and Behind the Scenes:
+		Create new ASTObject functions
+		Change Type to a struct
+		Add annotations and add them to ast objects
+		Add optimizer for byte code 
+		Add rewriting to print
+		Add heap
+		In rewriter and analyzer, don't pass ast node, pass the specific type
+		ASTPrint should only print offsets with a flag parameter set - not that important
+		Optimize opcodes after compiling?, get rid of vestigal stuff with oparray, etc ...
+		Work and the Type System and Language as a whole
 */

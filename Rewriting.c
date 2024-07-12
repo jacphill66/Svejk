@@ -252,13 +252,18 @@ ASTNode* rewriteLocalVariable(Rewriter* rewriter, ASTNode* n){
 ASTNode* rewriteBlock(Rewriter* rewriter, ASTNode* n){
 	ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
 	ASTBlock b;
-	b.variableCount = n->block.variableCount;
+	b.variableCount = 0;
+	//b.variableCount = n->block.variableCount;
 	b.cappacity = 1;//new cappacity
 	b.numberOfNodes = 0;//new numebr of nodes
 	b.nodes = (ASTNode*)malloc(sizeof(ASTNode));
 	node->block = b;
 	node->type = ASTBlock_NODE_TYPE;
-	for(int i = 0; i < n->block.numberOfNodes; i++) emitNodeToBlock(rewriteNode(rewriter, &n->block.nodes[i]), node);
+	for(int i = 0; i < n->block.numberOfNodes; i++) {
+		ASTNode* n2 = rewriteNode(rewriter, &n->block.nodes[i]);
+		if(n2->type == ASTLocalVariable_NODE_TYPE) b.variableCount++;
+		emitNodeToBlock(n2, node);
+	}
 	return node;
 }
 
@@ -282,7 +287,7 @@ ASTNode* rewriteLoopType1(Rewriter* rewriter,ASTNode* loop){
 ASTNode* rewriteLoopType2(Rewriter* rewriter,ASTNode* loop){
 	//missing line and type information
 	ASTLoop nLoop;
-	nLoop.expr = rewriteNode(rewriter, loop->loop.n1);
+	nLoop.expr = rewriteNode(rewriter, loop->loop.n1)->expr.expr;
 	nLoop.block = rewriteNode(rewriter, loop->loop.b);
 	ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
 	node->type = ASTLoop_NODE_TYPE;
@@ -295,31 +300,29 @@ ASTNode* rewriteLoopType3(Rewriter* rewriter, ASTNode* loop){
 	ASTNode* b = newBlock();
 	
 	//Build zero expression
-	ASTNode* val = (ASTNode*)malloc(sizeof(ASTValue));
-	val->type = ASTValue_NODE_TYPE;
-	val->value.v.type = I32_VAL;
-	val->value.v.i32 = 0;
 	ASTNode* zero = (ASTNode*)malloc(sizeof(ASTValue));
-		
-	ASTNode* var = uniqueVariable(rewriter->table, val);
+	zero->type = ASTValue_NODE_TYPE;
+	zero->value.v.type = I32_VAL;
+	zero->value.v.i32 = 0;
+	ASTNode* var = uniqueVariable(rewriter->table, zero);
 	var->type = ASTLocalVariable_NODE_TYPE;
 	ASTNode* refToVar = (ASTNode*)malloc(sizeof(ASTNode));
 	refToVar->type = ASTLocalID_NODE_TYPE;
 	ASTLocalID local;
 	local.id = var->localVar.id;
 	refToVar->localID = local;
-
+	
 	emitNodeToBlock(var, b);
-
+	b->block.variableCount++;
 
 	ASTNode* binOP = (ASTNode*)malloc(sizeof(ASTNode));
 	binOP->type = ASTBinaryOP_NODE_TYPE;
 	ASTBinaryOP binOP2;
-	binOP2.lhs = val;
+	binOP2.lhs = refToVar;
 	binOP2.op = LESS_OP;
-	binOP2.rhs = refToVar;//ref to var
+	binOP2.rhs = rewriteNode(rewriter, loop->loop.n1)->expr.expr;//ref to var
 	binOP->binaryOP = binOP2;
-	
+
 	ASTNode* newLoop = (ASTNode*)malloc(sizeof(ASTNode));
 	newLoop->type = ASTLoop_NODE_TYPE;
 	ASTLoop nLoop;
@@ -346,11 +349,13 @@ ASTNode* rewriteLoopType3(Rewriter* rewriter, ASTNode* loop){
 ASTNode* rewriteLoopType4(Rewriter* rewriter, ASTNode* loop){
 	//for(s1; s2; s3;){...} -> {s1; for s2 {...; s3;} }
 	ASTNode* b = newBlock();
-	emitNodeToBlock(rewriteNode(rewriter, loop->loop.n1), b);
+	ASTNode* x = rewriteNode(rewriter, loop->loop.n1);
+	emitNodeToBlock(x, b);
+	if(x->type = ASTLocalVariable_NODE_TYPE) b->block.variableCount++;
 	ASTNode* newLoop = (ASTNode*)malloc(sizeof(ASTNode));
 	newLoop->type = ASTLoop_NODE_TYPE;
 	ASTLoop nLoop;
-	nLoop.expr = rewriteNode(rewriter, loop->loop.n2);
+	nLoop.expr = rewriteNode(rewriter, loop->loop.n2)->expr.expr;
 	nLoop.block = rewriteNode(rewriter, loop->loop.b);
 	emitNodeToBlock(rewriteNode(rewriter, loop->loop.n3), nLoop.block);
 	newLoop->simpleLoop = nLoop;

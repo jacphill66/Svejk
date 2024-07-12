@@ -194,7 +194,7 @@ void printASTNode(AST* ast, ASTNode* node){
 				printASTNode(ast, &node->block.nodes[i]);
 				printf("\n");
 			}
-			printf("]");
+			printf("][%ld]", node->block.variableCount);
 			break;
 		}
 		case ASTForLoop_NODE_TYPE:{
@@ -833,6 +833,8 @@ ASTNode* newLoop(){
 	return loop;
 }
 
+
+
 ASTNode* parseFor(Parser* parser, TokenArray* tokens){
 	Token t = advance(tokens);
 	ASTNode* b = newBlock();
@@ -841,6 +843,7 @@ ASTNode* parseFor(Parser* parser, TokenArray* tokens){
 	ASTNode* loop = newLoop();
 	loop->loop.line = t.line;
 	if((tokens->tokens->type != LC_BRACKET_TOKEN)&&(tokens->tokens->type != LS_BRACKET_TOKEN)){
+		//split(parser, tokens, 0);
 		loop->loop.n1 = parseStatement(parser, tokens, b);
 		if(loop->loop.n1->type == ASTLocalVariable_NODE_TYPE) addToCurrentScope(parser->scopes, loop->loop.n1->localVar.id, -1, -1);
 		if(tokens->tokens->type == IN_TOKEN){
@@ -850,7 +853,7 @@ ASTNode* parseFor(Parser* parser, TokenArray* tokens){
 		}
 		else if((tokens->tokens->type != LS_BRACKET_TOKEN)&&(tokens->tokens->type != LC_BRACKET_TOKEN)){
 			advance(tokens);
-			loop->loop.n2 = parseStatement(parser, tokens, b);
+			loop->loop.n2 = parseStatement(parser, tokens, b);//parseStatement(parser, tokens, b);
 			if(loop->loop.n2->type == ASTLocalVariable_NODE_TYPE) addToCurrentScope(parser->scopes, loop->loop.n2->localVar.id, -1, -1);
 			advance(tokens);
 			loop->loop.n3 = parseStatement(parser, tokens, b);
@@ -912,6 +915,9 @@ ASTNode* parseStatement(Parser* parser, TokenArray* tokens, ASTNode* b){
 			return parseExpression(tokens, parser);
 		}	
 		case LPAREN_OP_TOKEN : {
+			return parseExpression(tokens, parser);
+		}
+		case NOT_OP_TOKEN : {
 			return parseExpression(tokens, parser);
 		}
 		case LC_BRACKET_TOKEN:{

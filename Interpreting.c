@@ -206,7 +206,17 @@ void printValue(VM* vm, Value* v){
 	}
 }
 
+void dumpStack(VM* vm){
+	Value* ptr = vm->stack;
+	while(ptr != vm->stackPtr){
+		printValue(vm, ptr);
+		printf("\n");
+		ptr++;
+	}
+}	
+
 void execute(VM* vm){
+	int i = 0;
 	for(;;){
 		switch(*vm->ip){
 			case PLUS_OP: {
@@ -274,7 +284,7 @@ void execute(VM* vm){
 				vm->ip++;
 				break;
 			}
-			case LESS_OP: {
+			case LESS_OP: {	
 				COMPARITIVE_BINARY_OP(<);
 				vm->ip++;
 				break;
@@ -339,7 +349,7 @@ void execute(VM* vm){
 				//++vm->stackPtr;				
 				break;
 			}
-			case GET_LOCAL_VAR_OP:{
+			case GET_LOCAL_VAR_OP:{		
 				vm->ip++;
 				*vm->stackPtr = vm->stack[*vm->ip++];
 				++vm->stackPtr;				
@@ -350,6 +360,19 @@ void execute(VM* vm){
 				vm->stackPtr->i32 = *vm->ip++;
 				vm->stackPtr->type = STR_VAL;
 				++vm->stackPtr;
+				break;
+			}
+			case JMP_BACK_OP:{
+				i = 1;
+				vm->ip++;
+				vm->ip -= *vm->ip; //vm->p->ops->ops[*vm->ip];
+				break;
+			}
+			case JMP_ON_FALSE_OP:{
+				vm->ip++;
+				vm->stackPtr--;
+				if (!vm->stackPtr->boolean) vm->ip += *vm->ip;
+				else vm->ip++;	
 				break;
 			}
 			default: {

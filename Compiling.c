@@ -183,9 +183,11 @@ void compileASTLoop(Compiler* c, ASTLoop* loop){
 	int index1 = c->opPos;
 	compileASTNode(c, loop->block);
 	int endPos = c->opPos;
+	//emitOP(c, POP_OP);
 	emitOP(c, JMP_BACK_OP);
-	emitOP(c, startPos);
-	c->prog->ops->ops[index1-1] = c->opPos;
+	emitOP(c, c->opPos-startPos);//c->opPos-startPos
+	c->prog->ops->ops[index1-1] = (c->opPos-index1)+1;
+	//emitOP(c, POP_OP);
 }
 
 void compileASTNode(Compiler* c, ASTNode* node){
@@ -379,14 +381,14 @@ void printOPS(Program* p){
 			}
 			case GET_LOCAL_VAR_OP: {
 				i += 1;
-				printf("SetLocal[");
+				printf("GetLocal[");
 				printf("%d", p->ops->ops[i]);
 				printf("]");
 				break;
 			}
 			case SET_LOCAL_VAR_OP: {
 				i += 1;
-				printf("SetGlobal[");
+				printf("SetLocal[");
 				printf("%d", p->ops->ops[i]);
 				printf("]");
 				break;
