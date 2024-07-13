@@ -249,6 +249,19 @@ void printASTNode(AST* ast, ASTNode* node){
 			printf("}");
 			break;
 		}
+		case ASTIf_NODE_TYPE:{
+			printf("if ");
+			printASTNode(ast, node->ifS.expr);
+			printASTNode(ast, node->ifS.s);
+			printf("\n");
+			if(node->ifS.elseS != NULL) printASTNode(ast, node->ifS.elseS);
+			break;
+		}
+		case ASTElse_NODE_TYPE:{
+			printf("else ");
+			printASTNode(ast, node->elseS.s);
+			break;
+		}
 		default : {
 			printf("Cannot print node of given type\n"); 
 			printf("%d",type);
@@ -351,6 +364,8 @@ int getOtherfixPrecedence(TokenType t){
 			[END_LINE_TOKEN] = -1,
 			[END_TOKEN] = -1,
 			[RPAREN_OP_TOKEN] = -1,
+			[IF_TOKEN] = -1,
+			[ELSE_TOKEN] = -1,
 	};
 	return precedence[t];
 }
@@ -833,7 +848,27 @@ ASTNode* newLoop(){
 	return loop;
 }
 
+ASTNode* parseElse(Parser* p, TokenArray* tokens){
+	ASTNode* elseS = (ASTNode*)malloc(sizeof(ASTNode));
+	elseS->type = ASTElse_NODE_TYPE;
+	Token t = advance(tokens);
+	elseS->elseS.line = t.line;
+	elseS->elseS.s = parseStatement(p, tokens, NULL);
+	return elseS;
+}
 
+ASTNode* parseIf(Parser* p, TokenArray* tokens){
+	ASTNode* ifS = (ASTNode*)malloc(sizeof(ASTNode));
+	ifS->type = ASTIf_NODE_TYPE;
+	Token t = advance(tokens);
+	ifS->ifS.line = t.line;
+	ifS->ifS.expr = split(p, tokens, 0);
+	ifS->ifS.s = parseStatement(p, tokens, NULL);
+	if(tokens->tokens->type == END_LINE_TOKEN) advance(tokens);
+	if(tokens->tokens->type == ELSE_TOKEN) ifS->ifS.elseS = parseElse(p, tokens);
+	else ifS->ifS.elseS = NULL;
+	return ifS;
+}
 
 ASTNode* parseFor(Parser* parser, TokenArray* tokens){
 	Token t = advance(tokens);
@@ -935,6 +970,9 @@ ASTNode* parseStatement(Parser* parser, TokenArray* tokens, ASTNode* b){
 				return parseLocalLet(tokens, parser);			
 			}
 			else return parseGlobalLet(tokens, parser);
+		}
+		case IF_TOKEN:{
+			return parseIf(parser, tokens);
 		}
 		default:{
 			printf("Unparsable token\n");
@@ -1039,17 +1077,50 @@ void freeASTNode(ASTNode* node){
 			break;
 		}
 		case ASTForLoop_NODE_TYPE:{
-			if(node->loop.n1 != NULL) freeASTNode(node->loop.n1);
-			if(node->loop.n2 != NULL) freeASTNode(node->loop.n2);
-			if(node->loop.n3 != NULL) freeASTNode(node->loop.n3);
-			if(node->loop.max != NULL) freeASTNode(node->loop.min);
-			if(node->loop.max != NULL) freeASTNode(node->loop.max);
+			if(node->loop.n1 != NULL) {
+				freeASTNode(node->loop.n1);
+				free(node->loop.n1);
+			}
+			if(node->loop.n2 != NULL){
+				freeASTNode(node->loop.n2);
+				free(node->loop.n2);
+			}
+			if(node->loop.n3 != NULL) {
+				freeASTNode(node->loop.n3);
+				free(node->loop.n3);
+			}
+			if(node->loop.max != NULL) {
+				freeASTNode(node->loop.min);
+				free(node->loop.min);
+			}
+			if(node->loop.max != NULL) {
+				freeASTNode(node->loop.max);
+				free(node->loop.max);
+			}
 			freeASTNode(node->loop.b);
+			break;
+		}
+		case ASTIf_NODE_TYPE:{
+			freeASTNode(node->ifS.expr);
+			free(node->ifS.expr);
+			freeASTNode(node->ifS.s);
+			free(node->ifS.s);
+			if(node->ifS.elseS != NULL){
+				freeASTNode(node->ifS.elseS);
+				free(node->ifS.elseS);
+			}
+			break;
+		}
+		case ASTElse_NODE_TYPE:{
+			freeASTNode(node->elseS.s);
+			free(node->elseS.s);
 			break;
 		}
 		case ASTLoop_NODE_TYPE:{
 			freeASTNode(node->simpleLoop.expr);
+			free(node->simpleLoop.expr);
 			freeASTNode(node->simpleLoop.block);
+			free(node->simpleLoop.block);
 			break;
 		}
 		default : {

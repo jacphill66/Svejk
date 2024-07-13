@@ -207,6 +207,14 @@ void printToken(Token* token){
 			printf("End-Token");
 			break;
 		}
+		case IF_TOKEN:{
+			printf("if");
+			break;
+		}
+		case ELSE_TOKEN:{
+			printf("else");
+			break;
+		}
 		default : {
 			printf("Unidentified Token: %d", token->type);
 		}
@@ -512,6 +520,18 @@ void tokenize(TokenArray* tokenArr, char* text, long textSize){
 				}
 				
 			}
+			case 'e' :{
+				if(matchAndDelimited(text, "else", 4)){
+					text+=4;
+					emitToken(ELSE_TOKEN, NULL, 0, tokenArr, lineNumber);
+					break;
+				}
+				else{
+					text += lexID(tokenArr, text, lineNumber);
+					break;
+				}
+				
+			}
 			case 'o' :{
 				if(matchAndDelimited(text, "or", 2)){
 					text+=2;
@@ -565,6 +585,11 @@ void tokenize(TokenArray* tokenArr, char* text, long textSize){
 				else if(matchAndDelimited(text, "in", 2)){
 					text+=2;
 					emitToken(IN_TOKEN, NULL, 0, tokenArr, lineNumber);
+					break;
+				}
+				else if(matchAndDelimited(text, "if", 2)){
+					text+=2;
+					emitToken(IF_TOKEN, NULL, 0, tokenArr, lineNumber);
 					break;
 				}
 				else{

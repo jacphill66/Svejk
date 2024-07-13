@@ -131,6 +131,20 @@ typedef struct{
 	Type t;
 }ASTLoop;
 
+typedef struct{
+	ASTNode* s;
+	long line;
+	Type t;
+}ASTElse;
+
+typedef struct{
+	ASTNode* expr;
+	ASTNode* s;
+	ASTNode* elseS;
+	long line;
+	Type t;
+}ASTIf;
+
 typedef enum{
 	ASTBinaryOP_NODE_TYPE,
 	ASTUnaryOP_NODE_TYPE,
@@ -148,6 +162,8 @@ typedef enum{
 	ASTGlobalAssignment_NODE_TYPE,
 	ASTForLoop_NODE_TYPE,
 	ASTLoop_NODE_TYPE,
+	ASTElse_NODE_TYPE,
+	ASTIf_NODE_TYPE,
 }ASTNodeType;
 
 struct ASTNode {
@@ -169,6 +185,8 @@ struct ASTNode {
 		ASTBlock block;
 		ASTForLoop loop;
 		ASTLoop simpleLoop;
+		ASTIf ifS;
+		ASTElse elseS;
 	};
 } ;
 

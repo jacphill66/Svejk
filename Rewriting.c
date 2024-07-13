@@ -376,8 +376,22 @@ ASTNode* rewriteForLoop(Rewriter* rewriter, ASTNode* loop){
 		else return rewriteLoopType4(rewriter, loop);
 		//else{
 	}
-	ASTNode n;
-	return NULL;
+}
+
+ASTNode* rewriteElse(Rewriter* rewriter, ASTNode* elseS){
+	ASTNode* e = (ASTNode*)malloc(sizeof(ASTNode));
+	e->type = ASTElse_NODE_TYPE;
+	e->elseS.s = rewriteNode(rewriter, elseS->elseS.s);
+	return e;
+}
+
+ASTNode* rewriteIf(Rewriter* rewriter, ASTNode* ifS){
+	ASTNode* i = (ASTNode*)malloc(sizeof(ASTNode));
+	i->type = ASTIf_NODE_TYPE;
+	i->ifS.expr = rewriteNode(rewriter, ifS->ifS.expr);
+	i->ifS.s = rewriteNode(rewriter, ifS->ifS.s);
+	if(ifS->ifS.elseS != NULL) i->ifS.elseS = rewriteElse(rewriter, ifS->ifS.elseS);
+	return i;
 }
 
 ASTNode* rewriteNode(Rewriter* rewriter, ASTNode* n){
@@ -424,8 +438,12 @@ ASTNode* rewriteNode(Rewriter* rewriter, ASTNode* n){
 		case ASTForLoop_NODE_TYPE:{
 			return rewriteForLoop(rewriter, n);
 		}
+		case ASTIf_NODE_TYPE:{
+			return rewriteIf(rewriter, n);
+		}
 		default:{
 			printf("Cannot rewrite node of given type\n");
+			printf("%d\n", n->type);
 			exit(1);
 		}
 	}

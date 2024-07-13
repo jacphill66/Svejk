@@ -290,6 +290,24 @@ Type analyzeLoop(Analyzer* a, ErrorArray* errors, ASTForLoop* loop){
 	return 0;
 }	
 
+Type analyzeElse(Analyzer* a, ErrorArray* errors, ASTElse* elseS){
+	elseS->t = analyzeNode(a, errors, elseS->s);
+	return elseS->t;
+}
+
+Type analyzeIf(Analyzer* a, ErrorArray* errors, ASTIf* ifS){
+	Type t = analyzeNode(a, errors, ifS->expr);
+	if(t != BOOL_TYPE) {
+		char* errorMsg;
+		char* msg = "If Statements Must Use Boolean Expressions";
+		strcpy(errorMsg, msg);
+		emitError(errors, newError(TYPE_MISMATCH_ERROR_TYPE, errorMsg, ifS->line));
+	}
+	t = analyzeNode(a, errors, ifS->s);
+	if(ifS->elseS != NULL) analyzeElse(a, errors, &ifS->elseS->elseS);
+	return t;
+}
+
 Type analyzeNode(Analyzer* a, ErrorArray* errors, ASTNode* n){
 	switch(n->type){
 		case ASTPrint_NODE_TYPE:{
@@ -361,6 +379,11 @@ Type analyzeNode(Analyzer* a, ErrorArray* errors, ASTNode* n){
 			Type t = analyzeLoop(a, errors, &n->loop);
 			n->loop.t = t;
 			return t;			
+		}
+		case ASTIf_NODE_TYPE:{
+			Type t = analyzeIf(a, errors, &n->ifS);
+			n->ifS.t = t;
+			break;
 		}
 		default : {
 			printf("Cannot analyze node of given type: %d", n->type);

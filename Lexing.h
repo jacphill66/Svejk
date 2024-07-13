@@ -57,6 +57,9 @@ typedef enum{
 	STR_TOKEN,
 	BOOL_TOKEN,
 	
+	IF_TOKEN,
+	ELSE_TOKEN,
+	
 	COMMENT_TOKEN,
 	
 	END_LINE_TOKEN,

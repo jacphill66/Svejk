@@ -18,24 +18,26 @@ int main(){
 	char* errorTest = "tests/Errors Test.txt";
 	char* inferenceTest = "tests/Inference Test.txt";
 	char* forTest = "tests/for Test.txt";
-	lex(tokens, forTest);
+	char* ifTest = "tests/If Test.txt";
+	lex(tokens, ifTest);
 	printTokens(tokens);
 	Parser* parser = newParser();
 	parse(parser, tokens);
 	freeTokens(tokens);
 	printAST(parser->ast);
 	
-	//exit(1);
 	
 	Analyzer* analyzer = newAnalyzer(parser->globalCount);
 	analyze(analyzer, parser->ast);
 	printErrors(analyzer->errors);
 	if(analyzer->errors->errorCount > 0) exit(1);
 	freeAnalyzer(analyzer);
-		
+
 	Rewriter* r = newRewriter(parser->ast, parser->globalCount);
 	AST* rewrittenAST = rewrite(r, parser->ast);
 	printAST(rewrittenAST);
+	exit(1);
+
 	//printf("Completed\n");
 	//exit(1);
 	//exit(1);
@@ -69,10 +71,13 @@ TODO:
 		Add multiple returns, named and default args, var args
 		Add assignment ops and desugar them
 		Add ADTs and Classes
-		Concurrency, Parallelism
+		Figure out and Add: Concurrency, Parallelism...
 		Parametric Polymorphism
-
+		Add scripts
+		Add Operator definitions
+		
 	Cleaning and Behind the Scenes:
+		For should just take one statement
 		Create new ASTObject functions
 		Change Type to a struct
 		Add annotations and add them to ast objects
@@ -83,4 +88,5 @@ TODO:
 		ASTPrint should only print offsets with a flag parameter set - not that important
 		Optimize opcodes after compiling?, get rid of vestigal stuff with oparray, etc ...
 		Work and the Type System and Language as a whole
+		Work on newlines and placement of: ;
 */
