@@ -218,6 +218,7 @@ ASTNode* rewriteString(Rewriter* rewriter, ASTNode* n){
 	str.index = n->str.index;
 	node->str = str;
 	node->type = ASTString_NODE_TYPE;
+	rewriter->rewrittenAST->stringCount++;
 	return node;
 }
 ASTNode* rewriteValue(Rewriter* rewriter, ASTNode* n){
@@ -481,6 +482,7 @@ void freeVariableTable(VariableTable* t){
 
 void freeRewriter(Rewriter* r){
 	freeVariableTable(r->table);
+	freeAST(r->rewrittenAST);
 	free(r);
 }
 

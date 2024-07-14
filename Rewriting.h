@@ -25,6 +25,7 @@ typedef struct{
 }Rewriter;
 
 Rewriter* newRewriter(AST* ast, int globalCount);
+void freeRewriter(Rewriter* r);
 ASTNode* rewriteNode(Rewriter* rewriter, ASTNode* n);
 AST* rewrite(Rewriter* rewriter, AST* ast);
 

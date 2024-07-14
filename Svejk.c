@@ -25,8 +25,6 @@ int main(){
 	parse(parser, tokens);
 	freeTokens(tokens);
 	printAST(parser->ast);
-	
-	
 	Analyzer* analyzer = newAnalyzer(parser->globalCount);
 	analyze(analyzer, parser->ast);
 	printErrors(analyzer->errors);
@@ -36,21 +34,22 @@ int main(){
 	Rewriter* r = newRewriter(parser->ast, parser->globalCount);
 	AST* rewrittenAST = rewrite(r, parser->ast);
 	printAST(rewrittenAST);
-	exit(1);
-
 	//printf("Completed\n");
 	//exit(1);
 	//exit(1);
+	//freeAST(parser->ast);
 	Compiler* c = newCompiler(rewrittenAST);
 	compile(c, rewrittenAST);
 	freeParser(parser);
+	freeRewriter(r);
 	printProgram(c->prog);
 
 	VM* vm = initVM(c->prog);
 	execute(vm);
 	freeCompiler(c);
 	printf("completed\n");
-	
+	exit(1);
+
 	return 0;
 }
 
@@ -59,7 +58,7 @@ int main(){
 /*
 TODO:
 	Features:
-		Add this
+		Add, work on this
 		Add Macros
 		Add break, continue, etc.
 		Add alpha type
@@ -75,6 +74,7 @@ TODO:
 		Parametric Polymorphism
 		Add scripts
 		Add Operator definitions
+		Add equality
 		
 	Cleaning and Behind the Scenes:
 		For should just take one statement

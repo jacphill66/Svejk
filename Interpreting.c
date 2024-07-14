@@ -216,7 +216,6 @@ void dumpStack(VM* vm){
 }	
 
 void execute(VM* vm){
-	int i = 0;
 	for(;;){
 		switch(*vm->ip){
 			case PLUS_OP: {
@@ -363,9 +362,13 @@ void execute(VM* vm){
 				break;
 			}
 			case JMP_BACK_OP:{
-				i = 1;
 				vm->ip++;
 				vm->ip -= *vm->ip; //vm->p->ops->ops[*vm->ip];
+				break;
+			}
+			case JMP_FORWARD_OP:{
+				vm->ip++;
+				vm->ip += *vm->ip; //vm->p->ops->ops[*vm->ip];
 				break;
 			}
 			case JMP_ON_FALSE_OP:{

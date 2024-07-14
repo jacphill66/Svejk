@@ -190,6 +190,20 @@ void compileASTLoop(Compiler* c, ASTLoop* loop){
 	//emitOP(c, POP_OP);
 }
 
+void compileASTIf(Compiler* c, ASTIf* ifS){
+	compileASTNode(c, ifS->expr);
+	emitOP(c, JMP_ON_FALSE_OP);
+	emitOP(c, -1);
+	int pos1 = c->opPos-1;
+	compileASTNode(c, ifS->s);
+	emitOP(c, JMP_FORWARD_OP);
+	emitOP(c, -1);
+	int pos2 = c->opPos-1;
+	c->prog->ops->ops[pos1] = (c->opPos - pos1);
+	if(ifS->elseS != NULL) compileASTNode(c, ifS->elseS->elseS.s);
+	c->prog->ops->ops[pos2] = (c->opPos - pos2);
+}
+
 void compileASTNode(Compiler* c, ASTNode* node){
 	switch(node->type){
 		case ASTPrint_NODE_TYPE:{
@@ -252,6 +266,10 @@ void compileASTNode(Compiler* c, ASTNode* node){
 			compileASTLoop(c, &node->simpleLoop);
 			break;
 		}
+		case ASTIf_NODE_TYPE:{
+			compileASTIf(c, &node->ifS);
+			break;
+		}
 		default : {
 			printf("Cannot compile node of given type: %d", node->type); 
 			exit(1);
@@ -279,7 +297,6 @@ void printVal(Value* v){
 		exit(1);
 	}
 }
-
 
 void printValues(ValueArray* vals){
 	printf("values: ");
@@ -446,6 +463,12 @@ void printOPS(Program* p){
 				printf("HALT");
 				break;
 			}
+			case JMP_FORWARD_OP:{
+				printf("JMP_FORWARD[");
+				i += 1;
+				printf("%d]", p->ops->ops[i]);
+				break;			
+			}
 			case JMP_BACK_OP:{
 				printf("JMP_BACK[");
 				i += 1;
@@ -502,8 +525,6 @@ void freeCompiler(Compiler* c){
 	free(c->scopes);
 	free(c);
 }
-
-
 
 Program* compile(Compiler* c, AST* ast){
 	for(int i = 0; i < c->ast->numberOfNodes; i++){

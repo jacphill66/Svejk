@@ -254,7 +254,9 @@ void printASTNode(AST* ast, ASTNode* node){
 			printASTNode(ast, node->ifS.expr);
 			printASTNode(ast, node->ifS.s);
 			printf("\n");
-			if(node->ifS.elseS != NULL) printASTNode(ast, node->ifS.elseS);
+			if(node->ifS.elseS != NULL) {
+				printf("( "); printASTNode(ast, node->ifS.elseS); printf(" )");
+			}
 			break;
 		}
 		case ASTElse_NODE_TYPE:{
@@ -865,8 +867,12 @@ ASTNode* parseIf(Parser* p, TokenArray* tokens){
 	ifS->ifS.expr = split(p, tokens, 0);
 	ifS->ifS.s = parseStatement(p, tokens, NULL);
 	if(tokens->tokens->type == END_LINE_TOKEN) advance(tokens);
-	if(tokens->tokens->type == ELSE_TOKEN) ifS->ifS.elseS = parseElse(p, tokens);
-	else ifS->ifS.elseS = NULL;
+	if(tokens->tokens->type == ELSE_TOKEN){
+		ifS->ifS.elseS = parseElse(p, tokens);
+	}
+	else {
+		ifS->ifS.elseS = NULL;
+	}
 	return ifS;
 }
 
@@ -1009,8 +1015,8 @@ void freeASTNode(ASTNode* node){
 		case ASTBinaryOP_NODE_TYPE :{
 			freeASTNode(node->binaryOP.lhs);
 			freeASTNode(node->binaryOP.rhs);
-			free(node->binaryOP.lhs);
-			free(node->binaryOP.rhs);
+			//free(node->binaryOP.lhs);
+			//free(node->binaryOP.rhs);
 			break;
 		}
 		case ASTString_NODE_TYPE:{
@@ -1028,11 +1034,11 @@ void freeASTNode(ASTNode* node){
 			break;
 		}
 		case ASTLocalID_NODE_TYPE:{
-			free(node->localID.id);
+			//free(node->localID.id);
 			break;
 		}
 		case ASTGlobalID_NODE_TYPE:{
-			free(node->globalID.id);
+			//free(node->globalID.id);
 			break;
 		}
 		case ASTValue_NODE_TYPE:{
@@ -1055,13 +1061,13 @@ void freeASTNode(ASTNode* node){
 		case ASTLocalVariable_NODE_TYPE:{
 			freeASTNode(node->localVar.expr);
 			free(node->localVar.expr);
-			free(node->localVar.id);
+			//free(node->localVar.id);
 			break;
 		}
 		case ASTGlobalVariable_NODE_TYPE:{
 			freeASTNode(node->globalVar.expr);
 			free(node->globalVar.expr);
-			free(node->globalVar.id);
+			//free(node->globalVar.id);
 			break;
 		}
 		case ASTLocalAssignment_NODE_TYPE:{
