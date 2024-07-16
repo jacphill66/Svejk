@@ -145,6 +145,13 @@ typedef struct{
 	Type t;
 }ASTIf;
 
+typedef struct{
+	Value* initalElements;
+	char** keys; 
+	int size;
+	int cappacity;
+}PrimStruct;
+
 typedef enum{
 	ASTBinaryOP_NODE_TYPE,
 	ASTUnaryOP_NODE_TYPE,

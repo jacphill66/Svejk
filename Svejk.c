@@ -58,26 +58,36 @@ int main(){
 /*
 TODO:
 	Features:
-		Add, work on this
-		Add Macros
-		Add break, continue, etc.
-		Add alpha type
-		Match, if-else, ...
-		Add functions
-		Add pure functions
-		Add Big ints and arbitrary precision arithmetic
-		Add data structures
-		Add multiple returns, named and default args, var args
-		Add assignment ops and desugar them
-		Add ADTs and Classes
-		Figure out and Add: Concurrency, Parallelism...
-		Parametric Polymorphism
-		Add scripts
-		Add Operator definitions
-		Add equality
+		Meta Programming and Extensibility:
+				Add Macros
+				Add, work on this
+				Add Operator definitions
+				Rewrite rules
+				Procedure definitions
+		Procedures:	
+			Add break, continue, etc.
+			Add Big ints and arbitrary precision arithmetic
+			Add data structures
+		Misc:
+			Add alpha type
+			Add assignment ops and desugar them
+			Add scripts
+			Add equality
+		Functions:
+			Add functions
+			Add pure functions
+			Add multiple returns, named and default args, var args
+			Match
+			Add ADTs
+		OOP:
+			Classes
+		Other:
+			Figure out and Add: Concurrency, Parallelism...
+			Parametric Polymorphism
+
 		
 	Cleaning and Behind the Scenes:
-		For should just take one statement
+		For should just take a statement
 		Create new ASTObject functions
 		Change Type to a struct
 		Add annotations and add them to ast objects

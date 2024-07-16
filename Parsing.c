@@ -929,6 +929,10 @@ ASTNode* parseFor(Parser* parser, TokenArray* tokens){
 	return loop;
 }
 
+ASTNode* parseBlockOrTable(Parser* p, TokenArray* tokens, ASTNode* b){
+	//parse a statement. if it is an expression, extract it, parse a dictionary
+}
+
 ASTNode* parseStatement(Parser* parser, TokenArray* tokens, ASTNode* b){
 	switch(tokens->tokens->type){
 		case I32_VAL_TOKEN : {
@@ -962,7 +966,7 @@ ASTNode* parseStatement(Parser* parser, TokenArray* tokens, ASTNode* b){
 			return parseExpression(tokens, parser);
 		}
 		case LC_BRACKET_TOKEN:{
-			return parseBlockExpression(tokens, parser);
+			return parseBlockOrTable(tokens, parser);
 		}
 		case PRINT_TOKEN:{
 			return parsePrint(tokens, parser);
