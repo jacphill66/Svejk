@@ -114,7 +114,7 @@ ASTNode* uniqueVariable(VariableTable* t, ASTNode* expr){
 	var.id = uniqueID(t)->str;
 	printf("%s\n", var.id);
 	var.expr = expr;
-	var.type = -3;
+	var.type = NULL;
 	var.offset = -3;
 	n->localVar = var;
 	emitLocal(t, var.id);
@@ -371,7 +371,7 @@ ASTNode* rewriteForLoop(Rewriter* rewriter, ASTNode* loop){
 	}
 	else {
 		if(loop->loop.n2 == NULL){
-			if((first->type == ASTExpression_NODE_TYPE) && (first->expr.t == I32_TYPE))return rewriteLoopType3(rewriter, loop);
+			if((first->type == ASTExpression_NODE_TYPE) && (getTrivialType(first->expr.t) == I32_TYPE))return rewriteLoopType3(rewriter, loop);
 			else return rewriteLoopType2(rewriter, loop);
 		}
 		else return rewriteLoopType4(rewriter, loop);

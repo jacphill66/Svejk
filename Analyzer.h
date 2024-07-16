@@ -4,9 +4,10 @@
 #include "Parsing.h"
 #include "Common.h"
 #include "ScopeChain.h"
+#include "TypeMap.h"
 
 typedef struct {
-	Type type;
+	Type* type;
 	char* message;
 	long line;
 	char** names;
@@ -20,11 +21,11 @@ typedef struct {
 
 typedef struct {
 	ErrorArray* errors;
-	Table* globalVarTypes;
-	ScopeChain* localVarTypes;
+	TypeMap* globalVarTypes;
+	TypeScopeChain* localVarTypes;
 } Analyzer;
 
-Type analyzeNode(Analyzer* a, ErrorArray* errors, ASTNode* n);
+Type* analyzeNode(Analyzer* a, ErrorArray* errors, ASTNode* n);
 ErrorArray* analyze(Analyzer* a, AST* ast);
 ErrorArray* checkAndInferTypes(ErrorArray* errors, AST* ast);
 void printErrors(ErrorArray* errors);
@@ -35,5 +36,8 @@ void freeAnalyzer(Analyzer* anlayzer);
 
 ErrorArray* newErrorArray();
 Analyzer* newAnalyzer(int globalCount);
+
+TrivialType getTrivialType(Type* t);
+Type* newTrivialType(TrivialType type);
 
 #endif

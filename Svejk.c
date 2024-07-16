@@ -73,18 +73,21 @@ TODO:
 			Add assignment ops and desugar them
 			Add scripts
 			Add equality
+			Add more features to print
+
 		Functions:
 			Add functions
 			Add pure functions
 			Add multiple returns, named and default args, var args
 			Match
 			Add ADTs
+
 		OOP:
 			Classes
+			pattern decorators
 		Other:
 			Figure out and Add: Concurrency, Parallelism...
 			Parametric Polymorphism
-
 		
 	Cleaning and Behind the Scenes:
 		For should just take a statement
@@ -99,4 +102,6 @@ TODO:
 		Optimize opcodes after compiling?, get rid of vestigal stuff with oparray, etc ...
 		Work and the Type System and Language as a whole
 		Work on newlines and placement of: ;
+		Add line counter to rewriter 
+		Ensure all nodes can be analyzed
 */

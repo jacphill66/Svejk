@@ -1,5 +1,17 @@
 #include "Parsing.h"
 
+TrivialType getTrivialType(Type* t){
+	if(t->kind == Trivial_KIND) return t->trivial;
+	else return 0;
+}
+
+Type* newTrivialType(TrivialType type){
+	Type* t = (Type*)malloc(sizeof(Type));
+	t->kind = Trivial_KIND;
+	t->trivial = type;
+	return t;
+}
+
 void printOP(OPCode op){
 	switch(op){
 		case PLUS_OP:{
@@ -162,14 +174,16 @@ void printASTNode(AST* ast, ASTNode* node){
 		}
 		case ASTGlobalVariable_NODE_TYPE:{
 			printf("GlobalVariable[");
-			printf("Id:%s, Type:%d, Expression:", node->globalVar.id, node->globalVar.type);
+			//node->globalVar.type
+			printf("Id:%s, Type:%d, Expression:", node->globalVar.id, -1);
 			printASTNode(ast, node->globalVar.expr);
 			printf("]");
 			break;
 		}
 		case ASTLocalVariable_NODE_TYPE:{
 			printf("LocalVariable[");
-			printf("Id:%s, Type:%d, Offset:%ld, Expression:", node->localVar.id, node->localVar.type, node->localVar.offset);
+			//node->localVar.type
+			printf("Id:%s, Type:%d, Offset:%ld, Expression:", node->localVar.id, -1, node->localVar.offset);
 			printASTNode(ast, node->localVar.expr);
 			printf("]");
 			break;
@@ -685,23 +699,23 @@ ASTNode* parseGlobalLet(TokenArray* tokens, Parser* parser){
 		t = advance(tokens);
 		switch (t.type){
 			case I32_TOKEN:{
-				var.type = I32_TYPE;
+				var.type = newTrivialType(I32_TYPE);
 				break;
 			}
 			case F32_TOKEN:{
-				var.type = F32_TYPE;
+				var.type = newTrivialType(F32_TYPE);
 				break;
 			}
 			case BOOL_TOKEN:{
-				var.type = BOOL_TYPE;
+				var.type = newTrivialType(BOOL_TYPE);
 				break;
 			}
 			case STR_TOKEN:{
-				var.type = STR_TYPE;
+				var.type = newTrivialType(STR_TYPE);
 				break;
 			}
 			default:{
-				var.type = -1;
+				var.type = NULL;
 				printf("Invalid Type Anotation\n");
 				exit(1);
 			}
@@ -717,7 +731,7 @@ ASTNode* parseGlobalLet(TokenArray* tokens, Parser* parser){
 	index.i32 = parser->globalCount;
 	set(parser->globalVariables, var.id, idSize, index);
 	parser->globalCount += 1;
-	if(!typed) var.type = INFERRED_TYPE;
+	if(!typed) var.type = newTrivialType(INFERRED_TYPE);
 	n->type = ASTGlobalVariable_NODE_TYPE;
 	n->globalVar = var;
 	return n;
@@ -779,19 +793,19 @@ ASTNode* parseLocalLet(TokenArray* tokens, Parser* parser){
 		t = advance(tokens);
 		switch (t.type){
 			case I32_TOKEN:{
-				var.type = I32_TYPE;
+				var.type = newTrivialType(I32_TYPE);
 				break;
 			}
 			case F32_TOKEN:{
-				var.type = F32_TYPE;
+				var.type = newTrivialType(F32_TYPE);
 				break;
 			}
 			case BOOL_TOKEN:{
-				var.type = BOOL_TYPE;
+				var.type = newTrivialType(BOOL_TYPE);
 				break;
 			}
 			case STR_TOKEN:{
-				var.type = STR_TYPE;
+				var.type = newTrivialType(STR_TYPE);
 				break;
 			}
 			default:{
@@ -806,7 +820,7 @@ ASTNode* parseLocalLet(TokenArray* tokens, Parser* parser){
 	if(redeclared) var.offset = -2;
 	else var.offset = parser->scopes->tail->offset;
 	addToCurrentScope(parser->scopes, var.id, idSize, -1);
-	if(!typed) var.type = INFERRED_TYPE;
+	if(!typed) var.type = newTrivialType(INFERRED_TYPE);
 	n->type = ASTLocalVariable_NODE_TYPE;
 	n->localVar = var;
 	return n;
@@ -838,6 +852,11 @@ ASTNode* parseBlockExpression(TokenArray* tokens, Parser* parser){
 	return b;
 }
 
+ASTNode* parseBlockOrTable(TokenArray* tokens, Parser* p){
+	//parse a statement. if it is an expression, extract it, parse a dictionary
+	return parseBlockExpression(tokens, p);
+}
+
 ASTNode* newLoop(){
 	ASTNode* loop = (ASTNode*)malloc(sizeof(ASTNode));
 	loop->loop.n1 = NULL;
@@ -850,7 +869,7 @@ ASTNode* newLoop(){
 	return loop;
 }
 
-ASTNode* parseElse(Parser* p, TokenArray* tokens){
+ASTNode* parseElse(TokenArray* tokens, Parser* p){
 	ASTNode* elseS = (ASTNode*)malloc(sizeof(ASTNode));
 	elseS->type = ASTElse_NODE_TYPE;
 	Token t = advance(tokens);
@@ -859,7 +878,7 @@ ASTNode* parseElse(Parser* p, TokenArray* tokens){
 	return elseS;
 }
 
-ASTNode* parseIf(Parser* p, TokenArray* tokens){
+ASTNode* parseIf(TokenArray* tokens, Parser* p){
 	ASTNode* ifS = (ASTNode*)malloc(sizeof(ASTNode));
 	ifS->type = ASTIf_NODE_TYPE;
 	Token t = advance(tokens);
@@ -868,7 +887,7 @@ ASTNode* parseIf(Parser* p, TokenArray* tokens){
 	ifS->ifS.s = parseStatement(p, tokens, NULL);
 	if(tokens->tokens->type == END_LINE_TOKEN) advance(tokens);
 	if(tokens->tokens->type == ELSE_TOKEN){
-		ifS->ifS.elseS = parseElse(p, tokens);
+		ifS->ifS.elseS = parseElse(tokens, p);
 	}
 	else {
 		ifS->ifS.elseS = NULL;
@@ -876,7 +895,7 @@ ASTNode* parseIf(Parser* p, TokenArray* tokens){
 	return ifS;
 }
 
-ASTNode* parseFor(Parser* parser, TokenArray* tokens){
+ASTNode* parseFor(TokenArray* tokens, Parser* parser){
 	Token t = advance(tokens);
 	ASTNode* b = newBlock();
 	parser->scopeDepth += 1;
@@ -929,10 +948,6 @@ ASTNode* parseFor(Parser* parser, TokenArray* tokens){
 	return loop;
 }
 
-ASTNode* parseBlockOrTable(Parser* p, TokenArray* tokens, ASTNode* b){
-	//parse a statement. if it is an expression, extract it, parse a dictionary
-}
-
 ASTNode* parseStatement(Parser* parser, TokenArray* tokens, ASTNode* b){
 	switch(tokens->tokens->type){
 		case I32_VAL_TOKEN : {
@@ -972,7 +987,7 @@ ASTNode* parseStatement(Parser* parser, TokenArray* tokens, ASTNode* b){
 			return parsePrint(tokens, parser);
 		}
 		case FOR_TOKEN:{
-			return parseFor(parser, tokens);
+			return parseFor(tokens, parser);
 		}
 		case LET_TOKEN:{
 			if(parser->scopeDepth > 0){
@@ -982,7 +997,7 @@ ASTNode* parseStatement(Parser* parser, TokenArray* tokens, ASTNode* b){
 			else return parseGlobalLet(tokens, parser);
 		}
 		case IF_TOKEN:{
-			return parseIf(parser, tokens);
+			return parseIf(tokens, parser);
 		}
 		default:{
 			printf("Unparsable token\n");

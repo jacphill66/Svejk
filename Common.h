@@ -68,7 +68,7 @@ typedef enum {
 typedef struct {
 	HeapType type;
 } HeapValue;
-
+/*
 //For the analyzer and type systems
 typedef enum{
 	I32_TYPE,
@@ -80,9 +80,10 @@ typedef enum{
 	REDECLARATION_ERROR_TYPE,
 	TYPE_MISMATCH_ERROR_TYPE,
 	VOID_TYPE,
-}Type;
+}Type;*/
 
-/*typedef enum{
+typedef enum{
+	INTERNAL_ERROR_TYPE,
 	I32_TYPE,
 	F32_TYPE,
 	STR_TYPE,
@@ -95,15 +96,15 @@ typedef enum{
 }TrivialType;
 
 typedef enum{
-	TrivialType_KIND,
+	Trivial_KIND,
 }TypeKind;
 
 typedef struct {
 	union {
-		TrivialType t;
+		TrivialType trivial;
 	};
 	TypeKind kind;
-} Type;*/
+} Type;
 
 typedef struct {
 	union {
@@ -114,6 +115,7 @@ typedef struct {
 	};
 	ValueType type;
 }Value;
+
 
 
 #endif

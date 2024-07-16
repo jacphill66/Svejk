@@ -14,41 +14,41 @@ typedef struct{
 	OPCode op;
 	ASTNode* rhs;
 	long line;
-	Type t;
+	Type* t;
 }ASTBinaryOP;
 
 typedef struct{
 	OPCode op;
 	ASTNode* opperand;
 	long line;
-	Type t;
+	Type* t;
 }ASTUnaryOP;
 
 typedef struct{
 	//hold args?
 	ASTNode* opperand;	
 	long line;
-	Type t;
+	Type* t;
 }ASTCallOP;
 
 typedef struct {
 	Value v;
 	long line;
-	Type t;
+	Type* t;
 }ASTValue;
 
 typedef struct {
 	char* id;
 	long index;
 	long line;
-	Type t;
+	Type* t;
 }ASTLocalID;
 
 typedef struct {
 	char* id;
 	long index;
 	long line;
-	Type t;
+	Type* t;
 }ASTGlobalID;
 
 typedef struct {
@@ -56,7 +56,7 @@ typedef struct {
 	ASTNode* expr;
 	long offset;
 	long line;
-	Type t;
+	Type* t;
 }ASTLocalAssignment;
 
 typedef struct {
@@ -64,37 +64,37 @@ typedef struct {
 	ASTNode* expr;
 	long index;
 	long line;
-	Type t;
+	Type* t;
 }ASTGlobalAssignment;
 
 typedef struct {
 	char* id;
-	Type type;
+	Type* type;
 	ASTNode* expr;
 	long index;
 	long line;
-	Type t;
+	Type* t;
 }ASTGlobalVariable;
 
 typedef struct {
 	char* id;
-	Type type;
+	Type* type;
 	ASTNode* expr;
 	long offset;
 	long line;
-	Type t;
+	Type* t;
 }ASTLocalVariable;
 
 typedef struct {
 	ASTNode* expr;
 	long line;
-	Type t;
+	Type* t;
 }ASTExpression;
 
 typedef struct{
 	ASTNode* expr;
 	long line;
-	Type t;
+	Type* t;
 }ASTPrint;
 
 typedef struct {
@@ -103,14 +103,14 @@ typedef struct {
 	long cappacity;
 	long numberOfNodes;
 	long line;
-	Type t;
+	Type* t;
 } ASTBlock;
 
 typedef struct{
 	char* str;
 	long index;
 	long line;
-	Type t;
+	Type* t;
 }ASTString;
 
 typedef struct{
@@ -121,20 +121,20 @@ typedef struct{
 	ASTNode* max;
 	ASTNode* b;
 	long line;
-	Type t;
+	Type* t;
 }ASTForLoop;
 
 typedef struct{
 	ASTNode* expr;
 	ASTNode* block;
 	long line;
-	Type t;
+	Type* t;
 }ASTLoop;
 
 typedef struct{
 	ASTNode* s;
 	long line;
-	Type t;
+	Type* t;
 }ASTElse;
 
 typedef struct{
@@ -142,7 +142,7 @@ typedef struct{
 	ASTNode* s;
 	ASTNode* elseS;
 	long line;
-	Type t;
+	Type* t;
 }ASTIf;
 
 typedef struct{
@@ -235,5 +235,6 @@ void printAST(AST* ast);
 void freeASTNode(ASTNode* node);
 void freeAST(AST* ast);
 void freeParser(Parser* parser);
+
 
 #endif
