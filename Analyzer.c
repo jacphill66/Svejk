@@ -37,6 +37,65 @@ ErrorArray* initErrorArray(){
 	return errors;
 }
 
+void printType(Type* t){
+	switch(t->kind){
+		case Trivial_KIND:{
+			switch(t->trivial){
+				case INTERNAL_ERROR_TYPE:{
+					printf("Internal Error Type");
+					break;
+				}
+				case I32_TYPE:{
+					printf("I32 Type");
+					break;
+				}
+				case F32_TYPE:{
+					printf("F32 Type");
+					break;
+				}
+				case STR_TYPE:{
+					printf("Str Type");
+					break;
+				}
+				case BOOL_TYPE:{
+					printf("Bool Type");
+					break;
+				}
+				case INFERRED_TYPE:{
+					printf("Inferred Type");
+					break;
+				}
+				case UNDECLARED_ERROR_TYPE:{
+					printf("Undeclared Error Type");
+					break;
+				}
+				case REDECLARATION_ERROR_TYPE:{
+					printf("Redeclaration Error Type");
+					break;
+				}
+				case TYPE_MISMATCH_ERROR_TYPE:{
+					printf("Type Mismatch Error Type");
+					break;
+				}
+				case VOID_TYPE:{
+					printf("Void Error Type");
+					break;
+				}
+				default:{
+					printf("Invalid Trivial Type\n");
+					exit(1);
+				}
+			}
+			break;
+		}
+		default:{
+			printf("Invalid Kind\n");
+			exit(1);
+			break;
+		}
+	}
+}
+
 void freeType(Type* t){
 	switch(t->kind){
 		case Trivial_KIND:{
@@ -52,7 +111,7 @@ void freeType(Type* t){
 }
 
 bool compareTypes(Type* t1, Type* t2){
-	return getTrivialType(t1) == getTrivialType(t2);
+	return (getTrivialType(t1) != -1) && getTrivialType(t1) == getTrivialType(t2);
 }
 
 Type* analyzePrint(Analyzer* a, ErrorArray* errors, ASTPrint* p){
@@ -80,8 +139,8 @@ Type* analyzeBinary(Analyzer* a, ErrorArray* errors, ASTBinaryOP* binOP){
 	Type* type2 = analyzeNode(a, errors, binOP->rhs);
 	TrivialType t1 = getTrivialType(type1);
 	TrivialType t2 = getTrivialType(type2);
-	freeType(type1);
-	freeType(type2);
+	//freeType(type1);
+	//freeType(type2);
 	if(t1 == -1 || t2 == -1) return newTrivialType(TYPE_MISMATCH_ERROR_TYPE);
 	switch (binOP->op){
 		case PLUS_OP:
@@ -120,7 +179,7 @@ Type* analyzeBinary(Analyzer* a, ErrorArray* errors, ASTBinaryOP* binOP){
 Type* analyzeUnary(Analyzer* a, ErrorArray* errors, ASTUnaryOP* unOP){
 	Type* type = analyzeNode(a, errors, unOP->opperand);
 	TrivialType t = getTrivialType(type);
-	freeType(type); 
+	//freeType(type); 
 	switch (unOP->op){
 		case PLUS_OP:
 		case SUB_OP:{
@@ -155,24 +214,20 @@ Type* analyzeGlobalVariable(Analyzer* a, ErrorArray* errors, ASTGlobalVariable* 
 	Type* t = analyzeNode(a, errors, var->expr);
 	if(getTrivialType(var->type) == INFERRED_TYPE) var->type = t;
 	else { 
-		if(var->type != t){
+		if(!compareTypes(var->type, t)){
 			size_t size = snprintf(NULL, 0, "Global Variable Declaration \"%s\"", var->id) + 1;
 			char* errorMsg = (char*)malloc(size);
 			snprintf(errorMsg, size, "Global Variable Declaration \"%s\"", var->id);
 			emitError(errors, newError(newTrivialType(TYPE_MISMATCH_ERROR_TYPE), errorMsg, var->line));
 		}
 	}
-	Value v;
-	v.type = I32_VAL;
-	v.i32 = -1;
 	if(var->index == -2){
 		size_t size = snprintf(NULL, 0, "Global Variable Declaration \"%s\"", var->id) + 1;
 		char* errorMsg = (char*)malloc(size);
 		snprintf(errorMsg, size, "Global Variable Declaration \"%s\"", var->id);
 		emitError(errors, newError(newTrivialType(REDECLARATION_ERROR_TYPE), errorMsg, var->line));
 	}
-	else set(a->globalVarTypes, var->id, -1, v);
-	//id size
+	else setTypeMap(a->globalVarTypes, var->id, var->type);
 	return t;
 }
 
@@ -190,26 +245,26 @@ Type* analyzeLocalVariable(Analyzer* a, ErrorArray* errors, ASTLocalVariable* va
 	Type* t = analyzeNode(a, errors, var->expr);
 	if(getTrivialType(var->type) == INFERRED_TYPE) var->type = t;
 	else {
-		size_t size = snprintf(NULL, 0, "Local Variable Declaration \"%s\"", var->id) + 1;
-		char* errorMsg = (char*)malloc(size);
-		snprintf(errorMsg, size, "Local Variable Declaration \"%s\"", var->id);
-		if(compareTypes(var->type, t)) emitError(errors, newError(newTrivialType(TYPE_MISMATCH_ERROR_TYPE), errorMsg, var->line));
+		if(!compareTypes(var->type, t)){
+			size_t size = snprintf(NULL, 0, "Local Variable Declaration \"%s\"", var->id) + 1;
+			char* errorMsg = (char*)malloc(size);
+			snprintf(errorMsg, size, "Local Variable Declaration \"%s\"", var->id);
+			if(compareTypes(var->type, t)) emitError(errors, newError(newTrivialType(TYPE_MISMATCH_ERROR_TYPE), errorMsg, var->line));
+		}
 	}
-	Value v;
-	v.type = I32_VAL;
-	v.i32 = -1;
 	if(var->offset == -2){
 		size_t size = snprintf(NULL, 0, "Local Variable Declaration \"%s\"", var->id) + 1;
 		char* errorMsg = (char*)malloc(size);
 		snprintf(errorMsg, size, "Local Variable Declaration \"%s\"", var->id);
 		emitError(errors, newError(newTrivialType(REDECLARATION_ERROR_TYPE), errorMsg, var->line));
 	}
-	else addToCurrentScope(a->localVarTypes, var->id, -1, -1);
+	else addToCurrentTypeScope(a->localVarTypes, var->id, var->type);
 	return t;
 }
 
 Type* analyzeLocalVariableReference(Analyzer* a, ErrorArray* errors, ASTLocalID* id){
-	Type* t = NULL;//searchScopes(a->localVarTypes, id->id);
+	Type* t = searchTypeScopes(a->localVarTypes, id->id);
+	if(t == NULL) t = newTrivialType(UNDECLARED_ERROR_TYPE);
 	if(id->index == -1) {
 		size_t size = snprintf(NULL, 0, "Variable Reference \"%s\"", id->id) + 1;
 		char* errorMsg = (char*)malloc(size);
@@ -220,7 +275,8 @@ Type* analyzeLocalVariableReference(Analyzer* a, ErrorArray* errors, ASTLocalID*
 }
 
 Type* analyzeGlobalVariableReference(Analyzer* a, ErrorArray* errors, ASTGlobalID* id){
-	Type* t = NULL; //get(a->globalVarTypes, id->id).i32;
+	Type* t = getTypeMap(a->globalVarTypes, id->id);
+	if(t == NULL) t = newTrivialType(UNDECLARED_ERROR_TYPE);
 	if(id->index == -1) {
 		size_t size = snprintf(NULL, 0, "Variable Reference \"%s\"", id->id) + 1;
 		char* errorMsg = (char*)malloc(size);
@@ -239,7 +295,7 @@ Type* analyzeGlobalAssignment(Analyzer* a, ErrorArray* errors, ASTGlobalAssignme
 		emitError(errors, newError(newTrivialType(UNDECLARED_ERROR_TYPE), errorMsg, ass->line));
 		return newTrivialType(UNDECLARED_ERROR_TYPE);
 	}
-	if(getTrivialType(t) != get(a->globalVarTypes, ass->id).i32){
+	if(!compareTypes(t, getTypeMap(a->globalVarTypes, ass->id))){
 		size_t size = snprintf(NULL, 0, "Global Variable Assignment \"%s\"", ass->id) + 1;
 		char* errorMsg = (char*)malloc(size);
 		snprintf(errorMsg, size, "Global Variable Assignment \"%s\"", ass->id);
@@ -257,7 +313,7 @@ Type* analyzeLocalAssignment(Analyzer* a, ErrorArray* errors, ASTLocalAssignment
 		emitError(errors, newError(newTrivialType(UNDECLARED_ERROR_TYPE), errorMsg, ass->line));
 		return newTrivialType(UNDECLARED_ERROR_TYPE);
 	}
-	if(getTrivialType(t) != searchScopes(a->localVarTypes, ass->id)){
+	if(!compareTypes(t, searchTypeScopes(a->localVarTypes, ass->id))){
 		size_t size = snprintf(NULL, 0, "Local Variable Assignment \"%s\"", ass->id) + 1;
 		char* errorMsg = (char*)malloc(size);
 		snprintf(errorMsg, size, "Local Variable Assignment \"%s\"", ass->id);
@@ -267,11 +323,12 @@ Type* analyzeLocalAssignment(Analyzer* a, ErrorArray* errors, ASTLocalAssignment
 }
 
 Type* analyzeBlock(Analyzer* a, ErrorArray* errors, ASTBlock* b){
-	newScope(a->localVarTypes);
+	newTypeScope(a->localVarTypes);
 	for(int i = 0; i < b->numberOfNodes; i++){
-		freeType(analyzeNode(a, errors, &b->nodes[i]));
+		analyzeNode(a, errors, &b->nodes[i]);
+		//freeType(analyzeNode(a, errors, &b->nodes[i]));
 	}
-	closeScope(a->localVarTypes);
+	closeTypeScope(a->localVarTypes);
 	return newTrivialType(VOID_TYPE);
 }
 
@@ -282,45 +339,50 @@ Type* analyzeString(Analyzer* a, ErrorArray* errors, ASTString* str){
 Type* analyzeLoop(Analyzer* a, ErrorArray* errors, ASTForLoop* loop){
 	//figure out the type, then type check it, append types
 	//if(){}
-	newScope(a->localVarTypes);
+	newTypeScope(a->localVarTypes);
 	if(loop->n1 != NULL){
 		Type* type = analyzeNode(a, errors, loop->n1);
 		TrivialType t = getTrivialType(type);
-		freeType(type);
+		//freeType(type);
 		if(t == TYPE_MISMATCH_ERROR_TYPE || (t != BOOL_TYPE && t != I32_TYPE)){
 			char errorMsg[14];
 			strcpy(errorMsg, "For Statement");
 			emitError(errors, newError(newTrivialType(TYPE_MISMATCH_ERROR_TYPE), errorMsg, loop->line));
 		}
 		if(loop->n2 != NULL){
-			freeType(analyzeNode(a, errors, loop->n2));
+			//freeType(analyzeNode(a, errors, loop->n2));
 			analyzeNode(a, errors, loop->n3);
 		}
 		//for-in loop, later...
 	}
-	Type* type = analyzeNode(a, errors, loop->min);
-	TrivialType t = getTrivialType(type);
-	freeType(type);
-	if(loop->min != NULL) if(t != I32_TYPE){
-		char* errorMsg;
-		char* msg = "Loop Minimum";
-		strcpy(errorMsg, msg);
-		emitError(errors, newError(newTrivialType(TYPE_MISMATCH_ERROR_TYPE), errorMsg, loop->line));
+	//freeType(type);
+	if(loop->min != NULL){
+		Type* type = analyzeNode(a, errors, loop->min);
+		TrivialType t = getTrivialType(type);
+		if(t != I32_TYPE){
+			char* errorMsg;
+			char* msg = "Loop Minimum";
+			strcpy(errorMsg, msg);
+			emitError(errors, newError(newTrivialType(TYPE_MISMATCH_ERROR_TYPE), errorMsg, loop->line));
+		}
 	}
-	type = analyzeNode(a, errors, loop->max);
-	t = getTrivialType(type);
-	freeType(type);
-	if(loop->max != NULL) if(t != I32_TYPE){
-		char* errorMsg;
-		char* msg = "Loop Maximum";
-		strcpy(errorMsg, msg);
-		emitError(errors, newError(newTrivialType(TYPE_MISMATCH_ERROR_TYPE), errorMsg, loop->line));
+
+	//freeType(type);
+	if(loop->max != NULL){
+		Type* type = analyzeNode(a, errors, loop->max);
+		TrivialType t = getTrivialType(type);
+		if(t != I32_TYPE){
+			char* errorMsg;
+			char* msg = "Loop Maximum";
+			strcpy(errorMsg, msg);
+			emitError(errors, newError(newTrivialType(TYPE_MISMATCH_ERROR_TYPE), errorMsg, loop->line));
+		}
 	}
-	newScope(a->localVarTypes);
-	type = analyzeNode(a, errors, loop->b);
-	freeType(type);
-	closeScope(a->localVarTypes);
-	closeScope(a->localVarTypes);
+	newTypeScope(a->localVarTypes);
+	Type* type = analyzeNode(a, errors, loop->b);
+	//freeType(type);
+	closeTypeScope(a->localVarTypes);
+	closeTypeScope(a->localVarTypes);
 	return newTrivialType(VOID_TYPE);
 }	
 
@@ -431,7 +493,8 @@ Type* analyzeNode(Analyzer* a, ErrorArray* errors, ASTNode* n){
 
 ErrorArray* analyze(Analyzer* a, AST* ast){
 	for(int i = 0; i < ast->numberOfNodes; i++){
-		freeType(analyzeNode(a, a->errors, &ast->nodes[i]));
+		analyzeNode(a, a->errors, &ast->nodes[i]);
+		//freeType(analyzeNode(a, a->errors, &ast->nodes[i]));
 	}
 }
 /*
@@ -483,7 +546,7 @@ void freeErrorArray(ErrorArray* errorArray){
 }
 void freeAnalyzer(Analyzer* analyzer){
 	freeErrorArray(analyzer->errors);
-	freeTable(analyzer->globalVarTypes);
+	freeTypeMap(analyzer->globalVarTypes);
 	free(analyzer->localVarTypes);
 	free(analyzer);
 }
@@ -500,8 +563,8 @@ ErrorArray* newErrorArray(){
 Analyzer* newAnalyzer(int globalCount){
 	Analyzer * analyzer = (Analyzer*)malloc(sizeof(Analyzer));
 	analyzer->errors = newErrorArray();
-	analyzer->globalVarTypes = newTable(globalCount);
-	analyzer->localVarTypes = newScopeChain();
+	analyzer->globalVarTypes = newTypeMap(globalCount);
+	analyzer->localVarTypes = newTypeScopeChain();
 	return analyzer;
 }
 

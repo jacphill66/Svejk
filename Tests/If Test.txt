@@ -1,0 +1,22 @@
+if true print "Should print"; else print "Should not print";
+
+if false print "print1"; else print "print2";
+
+print "here";
+
+let x:i32 = 1;
+
+
+if true {
+	print "here1";
+} else if false {
+	print "here2";
+} else if false {
+	print "here3";
+} else if false {
+	print "here4";
+} else {
+	print "here5";
+} 
+
+

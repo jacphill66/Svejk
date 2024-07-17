@@ -1,46 +1,32 @@
-for {
+
+
+
+for let i:i32 = 1; i < 10; i = i + 1 {
+	print i;
+}
+
+print 1;
+let x:i32 = 0;
+print not (x < 10);
+
+for 10 {
 
 }
+
+for (x < 10) {
+	print x;
+	x = x + 1;
+}
+
+print 2;
 
 for 5 {
-	print "What are you doing, Hal?";
+	print 10;
 }
 
-for 1+2+3+4 {
-	print "What are you doing, Hal?";
-	1+1;
-	print "apples";
-	print 1.2;
-	let x = 10;
+for 100000000{
+	//print "What are you doing, Hal?";
 }
+print "done";
 
-for 10 < 100 {
-
-}
-
-for let i:i32 = 1; 1 < 10; i = i + 1 { }
-
-
-for z in 1 { print z }
-
-for [1+2,100]{
-
-}
-
-for let x = 1; x < 10; x [x,x]{
-
-}
-
-for let x = 1; x < 10; x [,]{
-
-}
-
-for let x = 1; x < 10; x [x,]{
-
-}
-
-for let x = 1; x < 10; x [,x]{
-
-}
-
-for z in 1 [1,2+3+4]{ print z }
+for {}

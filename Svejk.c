@@ -1,14 +1,40 @@
 #include "Svejk.h"
-
+#include "TypeMap.h"
 
 char randomCharacter(char charArr[]){
 	srand(time(NULL));
     int index = rand() % 62;
 	return charArr[index];
 }
-
+/*
+TypeMap* t = newTypeMap(1);
+    char ascii_chars[] = {
+        ' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?',
+        '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+        '[', '\\', ']', '^', '_', '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+        '{', '|', '}', '~', '\0' // Null-terminate the array
+    };
+	int stringCount = 100000;
+	int stringLength = 10;
+	char ** strings = (char**)malloc(sizeof(char*)*stringCount);
+	for(int i = 0; i < stringCount; i++){
+		strings[i] = (char*)malloc(sizeof(char)*stringLength);
+		for(int j = 0; j < 10; j++){
+			strings[i][j] = randomCharacter(ascii_chars);
+		}
+	}
+	for(int i = 0; i < stringCount; i++){
+		setTypeMap(t, strings[i], newTrivialType(I32_TYPE));
+	}
+	freeTypeMap(t);
+	
+	
+	printf("completed");
+	exit(1);
+*/
 
 int main(){
+	
 	TokenArray* tokens = initTokenArray(tokens);
 	char* arithmeticTest = "tests/Arithmetic Test.txt";
 	char* stringTest = "tests/string Test.txt";
@@ -53,7 +79,12 @@ int main(){
 	return 0;
 }
 
-
+//Current:
+//parser, analyzer and rewriter have only one of: ref, assignment, dec
+//analyzer keeps track of global count
+//get rid of the type table
+//figure out when I can free types
+//make sure I free temp types, check all freeing and copying
 
 /*
 TODO:
@@ -90,18 +121,21 @@ TODO:
 			Parametric Polymorphism
 		
 	Cleaning and Behind the Scenes:
-		For should just take a statement
-		Create new ASTObject functions
-		Change Type to a struct
+		Priorities:
+			For should just take a statement
+			Create new ASTObject functions
+			Change Type to a struct
+			Add heap
+			Work on newlines and placement of: ;
+			Add line counter to rewriter 
+			Ensure all nodes can be analyzed
+			Work and the Type System and Language as a whole
+			Reduce responsibilities throughout parser, analyzer, compiler and rewriter
+			In rewriter and analyzer, don't pass ast node, pass the specific type
 		Add annotations and add them to ast objects
 		Add optimizer for byte code 
 		Add rewriting to print
-		Add heap
-		In rewriter and analyzer, don't pass ast node, pass the specific type
 		ASTPrint should only print offsets with a flag parameter set - not that important
 		Optimize opcodes after compiling?, get rid of vestigal stuff with oparray, etc ...
-		Work and the Type System and Language as a whole
-		Work on newlines and placement of: ;
-		Add line counter to rewriter 
-		Ensure all nodes can be analyzed
+
 */
