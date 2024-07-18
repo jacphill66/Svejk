@@ -5,6 +5,7 @@
 #include "Common.h"
 #include "Parsing.h"
 #include "ScopeChain.h"
+#include "Analyzer.h"
 
 typedef struct {
 	OPCode* ops;
@@ -35,12 +36,13 @@ typedef struct {
 	AST* ast;
 	Program* prog;
 	ScopeChain* scopes;
+	Analysis* analysis;
 	int scopeDepth;
 	int opPos;
 } Compiler;
 
 Program* newProgram(int stringCount);
-Compiler* newCompiler(AST* ast);
+Compiler* newCompiler(AST* ast, Analysis* a);
 void compileASTNode(Compiler* c, ASTNode* node);
 void printValues(ValueArray* vals);
 void printOPS(Program* p);

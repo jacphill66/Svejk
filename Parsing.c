@@ -121,12 +121,8 @@ void printASTNode(AST* ast, ASTNode* node){
 			printf("()");
 			break;
 		}
-		case ASTGlobalID_NODE_TYPE:{
-			printf("GlobalID[%s, %ld]", node->globalID.id, node->globalID.index);
-			break;
-		}
-		case ASTLocalID_NODE_TYPE:{
-			printf("LocalID[%s]", node->localID.id);
+		case ASTID_NODE_TYPE:{
+			printf("ID[%s]", node->id.id);
 			break;
 		}
 		case ASTValue_NODE_TYPE:{
@@ -172,33 +168,17 @@ void printASTNode(AST* ast, ASTNode* node){
 			printf("]");
 			break;
 		}
-		case ASTGlobalVariable_NODE_TYPE:{
-			printf("GlobalVariable[");
-			//node->globalVar.type
-			printf("Id:%s, Type:%d, Expression:", node->globalVar.id, -1);
-			printASTNode(ast, node->globalVar.expr);
+		case ASTVariable_NODE_TYPE:{
+			printf("Variable[");
+			printf("Id:%s, Expression:", node->var.id);
+			printASTNode(ast, node->var.expr);
 			printf("]");
 			break;
 		}
-		case ASTLocalVariable_NODE_TYPE:{
-			printf("LocalVariable[");
-			//node->localVar.type
-			printf("Id:%s, Type:%d, Offset:%ld, Expression:", node->localVar.id, -1, node->localVar.offset);
-			printASTNode(ast, node->localVar.expr);
-			printf("]");
-			break;
-		}
-		case ASTLocalAssignment_NODE_TYPE:{
-			printf("LocalAssignment[");
-			printf("Id:%s, Offset:%ld, Expression:", node->localAss.id, node->localAss.offset);
-			printASTNode(ast, node->localAss.expr);
-			printf("]");
-			break;
-		}
-		case ASTGlobalAssignment_NODE_TYPE:{
-			printf("GlobalAssignment[");
-			printf("Id:%s, Index:%ld, Expression:", node->globalAss.id, node->globalAss.index);
-			printASTNode(ast, node->globalAss.expr);
+		case ASTAssignment_NODE_TYPE:{
+			printf("Assignment[");
+			printf("Id:%s, Expression:", node->ass.id);
+			printASTNode(ast, node->ass.expr);
 			printf("]");
 			break;
 		}
@@ -208,7 +188,6 @@ void printASTNode(AST* ast, ASTNode* node){
 				printASTNode(ast, &node->block.nodes[i]);
 				printf("\n");
 			}
-			printf("][%ld]", node->block.variableCount);
 			break;
 		}
 		case ASTForLoop_NODE_TYPE:{
@@ -448,15 +427,7 @@ ASTNode* literal(Parser* parser, Token t){
 		}
 		case STR_VAL_TOKEN:{
 			node->type = ASTString_NODE_TYPE;
-			ASTString str = {t.value, search(parser->strings, t.value).i32, t.line};
-			if(str.index == -1) {
-				Value v;
-				v.i32 = parser->stringCount;
-				str.index = parser->stringCount;
-				insert(parser->strings, t.value, t.size, v);
-				parser->stringCount++;
-				parser->ast->stringCount++;
-			}
+			ASTString str = {t.value, t.line};
 			node->str = str;
 			return node;
 		}
@@ -479,16 +450,9 @@ ASTNode* literal(Parser* parser, Token t){
 			return node;	
 		}
 		case ID_TOKEN:{
-			if(searchScopes(parser->scopes, t.value) == -1){
-				ASTGlobalID id = {t.value, get(parser->globalVariables, t.value).i32, t.line};
-				node->globalID = id;
-				node->type = ASTGlobalID_NODE_TYPE;
-			}
-			else{
-				ASTLocalID id = {t.value, searchScopes(parser->scopes, t.value), t.line};
-				node->localID = id;
-				node->type = ASTLocalID_NODE_TYPE;
-			}
+			ASTID id = {t.value, t.line};
+			node->id = id;
+			node->type = ASTID_NODE_TYPE;
 			return node;
 		}
 	}
@@ -654,7 +618,6 @@ void emitNode(ASTNode* node, AST* ast){
 		ast->nodes = resizeNodes(ast->nodes, ast->cappacity);
 		ast->cappacity *= 2;
 	}
-
 }
 
 void emitNodeToBlock(ASTNode* node, ASTNode* b){
@@ -683,15 +646,13 @@ ASTNode* parsePrint(TokenArray* tokens, Parser* parser){
 	return n;
 }
 
-ASTNode* parseGlobalLet(TokenArray* tokens, Parser* parser){
+ASTNode* parseLet(TokenArray* tokens, Parser* parser){
 	advance(tokens);
 	Token t = advance(tokens);
 	ASTNode* n = malloc(sizeof(ASTNode));
-	ASTGlobalVariable var;
+	ASTVariable var;
 	var.line = t.line;
 	var.id = t.value;
-	bool redeclared = false;
-	if(get(parser->globalVariables, t.value).i32 != -1) redeclared = true;
 	int idSize = t.size;
 	t = advance(tokens);
 	bool typed = false;
@@ -725,15 +686,9 @@ ASTNode* parseGlobalLet(TokenArray* tokens, Parser* parser){
 	}
 	ASTNode* expr = {split(parser, tokens, 0)};
 	var.expr = expr;
-	if(redeclared) var.index = -2;
-	else var.index = parser->globalCount;
-	Value index;
-	index.i32 = parser->globalCount;
-	set(parser->globalVariables, var.id, idSize, index);
-	parser->globalCount += 1;
 	if(!typed) var.type = newTrivialType(INFERRED_TYPE);
-	n->type = ASTGlobalVariable_NODE_TYPE;
-	n->globalVar = var;
+	n->type = ASTVariable_NODE_TYPE;
+	n->var = var;
 	return n;
 }
 
@@ -753,77 +708,18 @@ ASTNode* parseAssignment(TokenArray* tokens, Parser* parser){
 	ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
 	Token t = *tokens->tokens;
 	char* id = t.value;
-	int localIndex = searchScopes(parser->scopes, t.value);
-	int globalIndex = get(parser->globalVariables, id).i32;
 	advance(tokens);
 	advance(tokens);
 	ASTNode* expr = split(parser, tokens, 0);
-	if(localIndex == -1){
-		ASTGlobalAssignment ass = {id, expr, globalIndex, t.line};
-		node->globalAss = ass;
-		node->type = ASTGlobalAssignment_NODE_TYPE;
-	}
-	else {
-		ASTLocalAssignment ass = {id, expr, localIndex, t.line};
-		node->localAss = ass;
-		node->type = ASTLocalAssignment_NODE_TYPE;
-	}
+	ASTAssignment ass = {id, expr, t.line};
+	node->ass = ass;
+	node->type = ASTAssignment_NODE_TYPE;
 	return node;
 }
 
 ASTNode* parseAssignmentOrReference(TokenArray* tokens, Parser* parser){
 	if(isAssignmentToken(peek(tokens).type)) return parseAssignment(tokens, parser);
 	return parseExpression(tokens, parser);
-}
-
-ASTNode* parseLocalLet(TokenArray* tokens, Parser* parser){
-	advance(tokens);
-	Token t = advance(tokens);
-	ASTNode* n = malloc(sizeof(ASTNode));
-	ASTLocalVariable var;
-	var.line = tokens->tokens->line;
-	var.id = t.value;
-	bool redeclared = false;
-	if(searchScope(parser->scopes->tail, t.value) != -1) redeclared = true;
-	int idSize = t.size;
-	//change advance... for infered types
-	t = advance(tokens);
-	bool typed = false;
-	if(t.type == COLON_TOKEN){
-		t = advance(tokens);
-		switch (t.type){
-			case I32_TOKEN:{
-				var.type = newTrivialType(I32_TYPE);
-				break;
-			}
-			case F32_TOKEN:{
-				var.type = newTrivialType(F32_TYPE);
-				break;
-			}
-			case BOOL_TOKEN:{
-				var.type = newTrivialType(BOOL_TYPE);
-				break;
-			}
-			case STR_TOKEN:{
-				var.type = newTrivialType(STR_TYPE);
-				break;
-			}
-			default:{
-				printf("Invalid Type Token\n");
-			}
-		}
-		typed = true;
-		advance(tokens);
-	}
-	ASTNode* expr = {split(parser, tokens, 0)};
-	var.expr = expr;
-	if(redeclared) var.offset = -2;
-	else var.offset = parser->scopes->tail->offset;
-	addToCurrentScope(parser->scopes, var.id, idSize, -1);
-	if(!typed) var.type = newTrivialType(INFERRED_TYPE);
-	n->type = ASTLocalVariable_NODE_TYPE;
-	n->localVar = var;
-	return n;
 }
 
 ASTNode* newBlock(){
@@ -841,13 +737,9 @@ ASTNode* newBlock(){
 ASTNode* parseBlockExpression(TokenArray* tokens, Parser* parser){
 	ASTNode* b = newBlock();
 	advance(tokens);
-	parser->scopeDepth += 1;
-	newScope(parser->scopes);
 	while(tokens->tokens->type != RC_BRACKET_TOKEN){
 		parseLocal(parser, b, tokens);
 	}
-	parser->scopeDepth -= 1;
-	closeScope(parser->scopes);
 	advance(tokens);
 	return b;
 }
@@ -898,14 +790,11 @@ ASTNode* parseIf(TokenArray* tokens, Parser* p){
 ASTNode* parseFor(TokenArray* tokens, Parser* parser){
 	Token t = advance(tokens);
 	ASTNode* b = newBlock();
-	parser->scopeDepth += 1;
-	newScope(parser->scopes);
 	ASTNode* loop = newLoop();
 	loop->loop.line = t.line;
 	if((tokens->tokens->type != LC_BRACKET_TOKEN)&&(tokens->tokens->type != LS_BRACKET_TOKEN)){
 		//split(parser, tokens, 0);
 		loop->loop.n1 = parseStatement(parser, tokens, b);
-		if(loop->loop.n1->type == ASTLocalVariable_NODE_TYPE) addToCurrentScope(parser->scopes, loop->loop.n1->localVar.id, -1, -1);
 		if(tokens->tokens->type == IN_TOKEN){
 			advance(tokens);
 			ASTNode* expr = parseExpression(tokens, parser);
@@ -913,11 +802,9 @@ ASTNode* parseFor(TokenArray* tokens, Parser* parser){
 		}
 		else if((tokens->tokens->type != LS_BRACKET_TOKEN)&&(tokens->tokens->type != LC_BRACKET_TOKEN)){
 			advance(tokens);
-			loop->loop.n2 = parseStatement(parser, tokens, b);//parseStatement(parser, tokens, b);
-			if(loop->loop.n2->type == ASTLocalVariable_NODE_TYPE) addToCurrentScope(parser->scopes, loop->loop.n2->localVar.id, -1, -1);
+			loop->loop.n2 = parseStatement(parser, tokens, b);
 			advance(tokens);
 			loop->loop.n3 = parseStatement(parser, tokens, b);
-			if(loop->loop.n3->type == ASTLocalVariable_NODE_TYPE) addToCurrentScope(parser->scopes, loop->loop.n3->localVar.id, -1, -1);
 		}
 	}
 	if(tokens->tokens->type == LS_BRACKET_TOKEN){
@@ -927,22 +814,10 @@ ASTNode* parseFor(TokenArray* tokens, Parser* parser){
 		if(tokens->tokens->type != RS_BRACKET_TOKEN) loop->loop.max = parseExpression(tokens, parser);
 		advance(tokens);
 	}
-	/*parseLocal(parser, b, tokens);
-	closeScope(parser->scopes);
-	loop->loop.b = b;*/
-	
-	//Scope resolution - fix this, Need to have them in a scope, also need to ensure this is done before the statements are done
-
 	advance(tokens);
-	parser->scopeDepth += 1;
-	newScope(parser->scopes);
 	while(tokens->tokens->type != RC_BRACKET_TOKEN){
 		parseLocal(parser, b, tokens);
 	}
-	parser->scopeDepth -= 1;
-	closeScope(parser->scopes);
-	parser->scopeDepth -= 1;
-	closeScope(parser->scopes);
 	loop->loop.b = b;
 	advance(tokens);
 	return loop;
@@ -950,35 +825,19 @@ ASTNode* parseFor(TokenArray* tokens, Parser* parser){
 
 ASTNode* parseStatement(Parser* parser, TokenArray* tokens, ASTNode* b){
 	switch(tokens->tokens->type){
-		case I32_VAL_TOKEN : {
-			return parseExpression(tokens, parser);
-		}
-		case F32_VAL_TOKEN : {
-			return parseExpression(tokens, parser);
-		}	
-		case STR_VAL_TOKEN : {
-			return parseExpression(tokens, parser);
-		}			
-		case TRUE_VAL_TOKEN : {
-			return parseExpression(tokens, parser);
-		}		
-		case FALSE_VAL_TOKEN : {
-			return parseExpression(tokens, parser);
-		}		
-		case ID_TOKEN:{
-			return parseAssignmentOrReference(tokens, parser);
-		}
-		case PLUS_OP_TOKEN : {
-			return parseExpression(tokens, parser);
-		}		
-		case SUB_OP_TOKEN : {
-			return parseExpression(tokens, parser);
-		}	
-		case LPAREN_OP_TOKEN : {
-			return parseExpression(tokens, parser);
-		}
+		case I32_VAL_TOKEN : 
+		case F32_VAL_TOKEN :
+		case STR_VAL_TOKEN :
+		case TRUE_VAL_TOKEN :
+		case FALSE_VAL_TOKEN :
+		case PLUS_OP_TOKEN :
+		case SUB_OP_TOKEN :
+		case LPAREN_OP_TOKEN :
 		case NOT_OP_TOKEN : {
 			return parseExpression(tokens, parser);
+		}
+		case ID_TOKEN:{
+			return parseAssignmentOrReference(tokens, parser);
 		}
 		case LC_BRACKET_TOKEN:{
 			return parseBlockOrTable(tokens, parser);
@@ -990,11 +849,7 @@ ASTNode* parseStatement(Parser* parser, TokenArray* tokens, ASTNode* b){
 			return parseFor(tokens, parser);
 		}
 		case LET_TOKEN:{
-			if(parser->scopeDepth > 0){
-				b->block.variableCount += 1;
-				return parseLocalLet(tokens, parser);			
-			}
-			else return parseGlobalLet(tokens, parser);
+			return parseLet(tokens, parser);
 		}
 		case IF_TOKEN:{
 			return parseIf(tokens, parser);
@@ -1030,16 +885,15 @@ void parse(Parser* parser, TokenArray* tokens){
 
 void freeASTNode(ASTNode* node){
 	ASTNodeType type = node->type;
-	switch(type){
+	switch(node->type){
 		case ASTBinaryOP_NODE_TYPE :{
 			freeASTNode(node->binaryOP.lhs);
 			freeASTNode(node->binaryOP.rhs);
-			//free(node->binaryOP.lhs);
-			//free(node->binaryOP.rhs);
+			free(node->binaryOP.lhs);
+			free(node->binaryOP.rhs);
 			break;
 		}
 		case ASTString_NODE_TYPE:{
-			//free(node->str.str);
 			break;
 		}
 		case ASTUnaryOP_NODE_TYPE : {
@@ -1052,12 +906,7 @@ void freeASTNode(ASTNode* node){
 			free(node->callOP.opperand);
 			break;
 		}
-		case ASTLocalID_NODE_TYPE:{
-			//free(node->localID.id);
-			break;
-		}
-		case ASTGlobalID_NODE_TYPE:{
-			//free(node->globalID.id);
+		case ASTID_NODE_TYPE:{
 			break;
 		}
 		case ASTValue_NODE_TYPE:{
@@ -1077,29 +926,15 @@ void freeASTNode(ASTNode* node){
 			for(long i = 0; i < node->block.numberOfNodes; i++)	freeASTNode(&node->block.nodes[i]);
 			break;
 		}
-		case ASTLocalVariable_NODE_TYPE:{
-			freeASTNode(node->localVar.expr);
-			free(node->localVar.expr);
-			//free(node->localVar.id);
+		case ASTVariable_NODE_TYPE:{
+			freeASTNode(node->var.expr);
+			free(node->var.expr);
 			break;
 		}
-		case ASTGlobalVariable_NODE_TYPE:{
-			freeASTNode(node->globalVar.expr);
-			free(node->globalVar.expr);
-			//free(node->globalVar.id);
-			break;
-		}
-		case ASTLocalAssignment_NODE_TYPE:{
-			freeASTNode(node->localAss.expr);
-			free(node->localAss.expr);
-			//free(node->globalAss.id);
+		case ASTAssignment_NODE_TYPE:{
+			freeASTNode(node->ass.expr);
+			free(node->ass.expr);
 			break;			
-		}
-		case ASTGlobalAssignment_NODE_TYPE:{
-			freeASTNode(node->globalAss.expr);
-			free(node->globalAss.expr);
-			//free(node->globalAss.id);
-			break;
 		}
 		case ASTForLoop_NODE_TYPE:{
 			if(node->loop.n1 != NULL) {
@@ -1163,10 +998,7 @@ void freeAST(AST* ast){
 }
 
 void freeParser(Parser* parser){
-	freeTable(parser->globalVariables);
-	freeTreeNoKeys(parser->strings);
 	freeAST(parser->ast);
-	free(parser->scopes);
 	free(parser);
 }
 
@@ -1175,21 +1007,11 @@ AST* newAST(){
 	ast->nodes = (ASTNode*) malloc(sizeof(ASTNode));
 	ast->cappacity = 1;
 	ast->numberOfNodes = 0;
-	ast->stringCount = 0;
 	return ast;
 }
 
 Parser* newParser(){
 	Parser* parser = (Parser*) malloc(sizeof(Parser));
-	parser->ast = newAST();
-		
-	parser->globalVariables = newTable(10);
-	parser->globalCount = 0;
-
-	parser->scopes = newScopeChain();
-	parser->scopeDepth = 0;
-
-	parser->strings = newTree();
-	parser->stringCount = 0;
-	
+	parser->ast = newAST();	
+	return parser;
 }

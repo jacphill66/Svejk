@@ -45,6 +45,7 @@ void emitValue(Compiler* c, Value v){
 }
 
 Program* newProgram(int stringCount){
+	//refactor this mess
 	Program* p = (Program*)malloc(sizeof(Program));
 	OPCode* ops = (OPCode*)malloc(sizeof(OPCode));
 	OPArray* o = malloc(sizeof(OPArray));
@@ -64,13 +65,15 @@ Program* newProgram(int stringCount){
 	return p;
 }
 
-Compiler* newCompiler(AST* ast){
+Compiler* newCompiler(AST* ast, Analysis* a){
 	Compiler* c = (Compiler*)malloc(sizeof(Compiler));
-	c->prog = newProgram(ast->stringCount);
+	c->prog = newProgram(a->stringCount);
 	c->ast = ast;
 	c->scopes = newScopeChain();//redo local indexing because of rewriting
+	newScope(c->scopes);
 	c->scopeDepth = 0;
 	c->opPos = 0;
+	c->analysis = a;
 	return c;
 }
 
@@ -112,32 +115,39 @@ void compileASTPrint(Compiler* c, ASTPrint* print){
 	emitOP(c, PRINT_OP);
 	emitOP(c, POP_OP);
 }
-
-void compileASTGlobalVariable(Compiler* c, ASTGlobalVariable* var){
+void compileASTVariable(Compiler* c, ASTVariable* var){
 	compileASTNode(c, var->expr);
-	emitOP(c, SET_GLOBAL_VAR_OP);
-	emitOP(c, var->index);
-	c->prog->globalCount++;
-	//emitOP(p->ops, POP_OP);//maybe, worked with it????
+	if(c->scopeDepth < 1) {
+		addToCurrentScope(c->scopes, var->id, -1, -1);
+		emitOP(c, SET_GLOBAL_VAR_OP);
+		emitOP(c, c->prog->globalCount++);
+	}
+	else{
+		addToCurrentScope(c->scopes, var->id, -1, -1);
+		compileASTNode(c, var->expr);	
+	}
 }
 
-void compileASTGlobalReference(Compiler* c, ASTGlobalID* id){
-	emitOP(c, GET_GLOBAL_VAR_OP);
-	emitOP(c, id->index);
-}
-
-void compileASTLocalVariable(Compiler* c, ASTLocalVariable* var){
-	addToCurrentScope(c->scopes, var->id, -1, -1);
-	compileASTNode(c, var->expr);
-}
-
-void compileASTLocalReference(Compiler* c, ASTLocalID* id){
-	emitOP(c, GET_LOCAL_VAR_OP);
+void compileASTReference(Compiler* c, ASTID* id){
 	int i = searchScopes(c->scopes, id->id);
 	if(i < 0) {
 		printf("Compiler Error!");
 		exit(1);
 	}
+	if(c->scopeDepth < 1) emitOP(c, GET_GLOBAL_VAR_OP);
+	else emitOP(c, GET_LOCAL_VAR_OP);
+	emitOP(c, i);
+}
+
+void compileASTAssignment(Compiler* c, ASTAssignment* ass){
+	int i = searchScopes(c->scopes, ass->id);
+	if(i < 0) {
+		printf("Compiler Error");
+		exit(1);
+	}
+	compileASTNode(c, ass->expr);
+	if(c->scopeDepth < 1) emitOP(c, SET_GLOBAL_VAR_OP);
+	else emitOP(c, SET_LOCAL_VAR_OP); 
 	emitOP(c, i);
 }
 
@@ -150,29 +160,12 @@ void compileASTBlock(Compiler* c, ASTBlock* block){
 	c->scopeDepth--;
 }
 
-void compileASTLocalAssignment(Compiler* c, ASTLocalAssignment* ass){
-	compileASTNode(c, ass->expr);
-	emitOP(c, SET_LOCAL_VAR_OP);
-	int i = searchScopes(c->scopes, ass->id);
-	if(i < 0) {
-		printf("Compiler Error");
-		exit(1);
-	}
-	emitOP(c, i);
-	//printf("INDEX: %ld\n", ass->offset);
-}
-
-void compileASTGlobalAssignment(Compiler* c, ASTGlobalAssignment* ass){
-	compileASTNode(c, ass->expr);
-	emitOP(c, SET_GLOBAL_VAR_OP);
-	emitOP(c, ass->index);	
-	//printf("INDEX: %ld\n", ass->index);
-}
 
 void compileASTString(Compiler* c, ASTString* str){
 	emitOP(c, STR_VAL_OP);
-	emitOP(c, str->index);
-	c->prog->strings[str->index] = str->str;
+	int i = search(c->analysis->strings, str->str).i32;
+	emitOP(c, i);
+	c->prog->strings[i] = str->str;
 }
 
 void compileASTLoop(Compiler* c, ASTLoop* loop){
@@ -230,28 +223,16 @@ void compileASTNode(Compiler* c, ASTNode* node){
 			compileASTValueNode(c, &node->value);
 			break;
 		}
-		case ASTGlobalVariable_NODE_TYPE:{
-			compileASTGlobalVariable(c, &node->globalVar);
+		case ASTID_NODE_TYPE:{
+			compileASTReference(c, &node->id);
 			break;
 		}
-		case ASTGlobalID_NODE_TYPE:{
-			compileASTGlobalReference(c, &node->globalID);
+		case ASTVariable_NODE_TYPE:{
+			compileASTVariable(c, &node->var);
 			break;
 		}
-		case ASTLocalVariable_NODE_TYPE:{
-			compileASTLocalVariable(c, &node->localVar);
-			break;
-		}
-		case ASTLocalID_NODE_TYPE:{
-			compileASTLocalReference(c, &node->localID);
-			break;
-		}
-		case ASTGlobalAssignment_NODE_TYPE:{
-			compileASTGlobalAssignment(c, &node->globalAss);
-			break;
-		}
-		case ASTLocalAssignment_NODE_TYPE:{
-			compileASTLocalAssignment(c, &node->localAss);
+		case ASTAssignment_NODE_TYPE:{
+			compileASTAssignment(c, &node->ass);
 			break;
 		}
 		case ASTBlock_NODE_TYPE:{
@@ -521,6 +502,7 @@ void freeProgram(Program* p){
 }
 
 void freeCompiler(Compiler* c){
+	closeScope(c->scopes);
 	free(c->prog);
 	free(c->scopes);
 	free(c);

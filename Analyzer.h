@@ -19,10 +19,16 @@ typedef struct {
 	long errorCount;
 } ErrorArray;
 
-typedef struct {
+typedef struct{
 	ErrorArray* errors;
-	TypeMap* globalVarTypes;
-	TypeScopeChain* localVarTypes;
+	long globalCount;
+	long stringCount;
+	RedBlackTree* strings;
+} Analysis;
+
+typedef struct {
+	Analysis* a;
+	TypeScopeChain* varTypes;
 } Analyzer;
 
 Type* analyzeNode(Analyzer* a, ErrorArray* errors, ASTNode* n);
@@ -32,10 +38,11 @@ void printErrors(ErrorArray* errors);
 
 void freeErrors(Error** errors, int errorCount);
 void freeErrorArray(ErrorArray* errorArray);
+void freeAnalysis(Analysis* a);
 void freeAnalyzer(Analyzer* anlayzer);
 
 ErrorArray* newErrorArray();
-Analyzer* newAnalyzer(int globalCount);
+Analyzer* newAnalyzer();
 
 TrivialType getTrivialType(Type* t);
 Type* newTrivialType(TrivialType type);

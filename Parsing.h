@@ -39,51 +39,24 @@ typedef struct {
 
 typedef struct {
 	char* id;
-	long index;
 	long line;
 	Type* t;
-}ASTLocalID;
-
-typedef struct {
-	char* id;
-	long index;
-	long line;
-	Type* t;
-}ASTGlobalID;
+}ASTID;
 
 typedef struct {
 	char* id;
 	ASTNode* expr;
-	long offset;
 	long line;
 	Type* t;
-}ASTLocalAssignment;
-
-typedef struct {
-	char* id;
-	ASTNode* expr;
-	long index;
-	long line;
-	Type* t;
-}ASTGlobalAssignment;
+}ASTAssignment;
 
 typedef struct {
 	char* id;
 	Type* type;
 	ASTNode* expr;
-	long index;
 	long line;
 	Type* t;
-}ASTGlobalVariable;
-
-typedef struct {
-	char* id;
-	Type* type;
-	ASTNode* expr;
-	long offset;
-	long line;
-	Type* t;
-}ASTLocalVariable;
+}ASTVariable;
 
 typedef struct {
 	ASTNode* expr;
@@ -108,7 +81,6 @@ typedef struct {
 
 typedef struct{
 	char* str;
-	long index;
 	long line;
 	Type* t;
 }ASTString;
@@ -156,17 +128,14 @@ typedef enum{
 	ASTBinaryOP_NODE_TYPE,
 	ASTUnaryOP_NODE_TYPE,
 	ASTCallOP_NODE_TYPE,
-	ASTLocalID_NODE_TYPE,
-	ASTGlobalID_NODE_TYPE,
+	ASTID_NODE_TYPE,
 	ASTValue_NODE_TYPE,
 	ASTString_NODE_TYPE,
 	ASTExpression_NODE_TYPE,
 	ASTPrint_NODE_TYPE,
-	ASTGlobalVariable_NODE_TYPE,
-	ASTLocalVariable_NODE_TYPE,
+	ASTVariable_NODE_TYPE,
 	ASTBlock_NODE_TYPE,
-	ASTLocalAssignment_NODE_TYPE,
-	ASTGlobalAssignment_NODE_TYPE,
+	ASTAssignment_NODE_TYPE,
 	ASTForLoop_NODE_TYPE,
 	ASTLoop_NODE_TYPE,
 	ASTElse_NODE_TYPE,
@@ -179,16 +148,13 @@ struct ASTNode {
 		ASTBinaryOP binaryOP;
 		ASTUnaryOP unaryOP;
 		ASTCallOP callOP;
-		ASTLocalID localID;
-		ASTGlobalID globalID;
 		ASTValue value;
 		ASTString str;
 		ASTExpression expr;
 		ASTPrint print;
-		ASTGlobalVariable globalVar;
-		ASTLocalVariable localVar;
-		ASTGlobalAssignment globalAss;
-		ASTLocalAssignment localAss;
+		ASTID id;
+		ASTVariable var;
+		ASTAssignment ass;
 		ASTBlock block;
 		ASTForLoop loop;
 		ASTLoop simpleLoop;
@@ -201,17 +167,10 @@ typedef struct {
 	ASTNode* nodes;
 	long cappacity;
 	long numberOfNodes;
-	int stringCount;
 } AST;
 
 typedef struct {
 	AST* ast;
-	Table* globalVariables;
-	ScopeChain* scopes;
-	RedBlackTree* strings;
-	long globalCount;
-	long scopeDepth;
-	long stringCount;	
 } Parser;
 
 ASTNode* newBlock();

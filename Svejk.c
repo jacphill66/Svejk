@@ -45,31 +45,26 @@ int main(){
 	char* inferenceTest = "tests/Inference Test.txt";
 	char* forTest = "tests/for Test.txt";
 	char* ifTest = "tests/If Test.txt";
-	lex(tokens, ifTest);
+	lex(tokens, forTest);
 	printTokens(tokens);
 	Parser* parser = newParser();
 	parse(parser, tokens);
 	freeTokens(tokens);
 	printAST(parser->ast);
-	Analyzer* analyzer = newAnalyzer(parser->globalCount);
+	Analyzer* analyzer = newAnalyzer();
 	analyze(analyzer, parser->ast);
-	printErrors(analyzer->errors);
-	if(analyzer->errors->errorCount > 0) exit(1);
-	freeAnalyzer(analyzer);
-
-	Rewriter* r = newRewriter(parser->ast, parser->globalCount);
+	printErrors(analyzer->a->errors);
+	if(analyzer->a->errors->errorCount > 0) exit(1);
+	Rewriter* r = newRewriter(parser->ast);
 	AST* rewrittenAST = rewrite(r, parser->ast);
 	printAST(rewrittenAST);
-	//printf("Completed\n");
-	//exit(1);
-	//exit(1);
-	//freeAST(parser->ast);
-	Compiler* c = newCompiler(rewrittenAST);
+	Compiler* c = newCompiler(rewrittenAST, analyzer->a);
+	//split analysis and analyzer, free doesn't free analyzer
 	compile(c, rewrittenAST);
+	freeAnalyzer(analyzer);
 	freeParser(parser);
 	freeRewriter(r);
 	printProgram(c->prog);
-
 	VM* vm = initVM(c->prog);
 	execute(vm);
 	freeCompiler(c);
@@ -87,18 +82,43 @@ int main(){
 //make sure I free temp types, check all freeing and copying
 
 /*
+	Move these to analyzer:
+		Table* globalVariables;
+		ScopeChain* scopes;
+		RedBlackTree* strings;
+		long globalCount;
+		long scopeDepth;
+		long stringCount;	
+		long globalCount;
+		long scopeDepth;
+		long stringCount;	
+		
+		
+			parser->globalVariables = newTable(10);
+	parser->globalCount = 0;
+
+	parser->scopes = newScopeChain();
+	parser->scopeDepth = 0;
+
+	parser->strings = newTree();
+	parser->stringCount = 0;
+*/
+
+/*
 TODO:
 	Features:
 		Meta Programming and Extensibility:
-				Add Macros
-				Add, work on this
-				Add Operator definitions
-				Rewrite rules
-				Procedure definitions
+			Add Macros
+			Add, work on this
+			Add Operator definitions
+			Rewrite rules
+			Procedure definitions
+			
 		Procedures:	
 			Add break, continue, etc.
 			Add Big ints and arbitrary precision arithmetic
 			Add data structures
+			
 		Misc:
 			Add alpha type
 			Add assignment ops and desugar them
@@ -112,19 +132,20 @@ TODO:
 			Add multiple returns, named and default args, var args
 			Match
 			Add ADTs
-
+			
 		OOP:
 			Classes
 			pattern decorators
+			
 		Other:
 			Figure out and Add: Concurrency, Parallelism...
 			Parametric Polymorphism
+			Regions and ownership!
 		
 	Cleaning and Behind the Scenes:
 		Priorities:
 			For should just take a statement
 			Create new ASTObject functions
-			Change Type to a struct
 			Add heap
 			Work on newlines and placement of: ;
 			Add line counter to rewriter 
@@ -133,9 +154,15 @@ TODO:
 			Reduce responsibilities throughout parser, analyzer, compiler and rewriter
 			In rewriter and analyzer, don't pass ast node, pass the specific type
 		Add annotations and add them to ast objects
-		Add optimizer for byte code 
 		Add rewriting to print
 		ASTPrint should only print offsets with a flag parameter set - not that important
 		Optimize opcodes after compiling?, get rid of vestigal stuff with oparray, etc ...
+		get rid of the -1 for types in add to current scope
+	Backend Features:
+		Add optimizer: spits out optimized byte code
+		Add solver: small step operationally solves a program
+		Add deducer: deduces facts about programs, termination, etc
+		Add reassembler: takes byte code and reassemblies it - needs to reassemble data too?
+		Add transpiler: transpiles it to various languages		
 
 */

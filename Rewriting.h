@@ -11,11 +11,9 @@ typedef struct{
 }String;
 
 typedef struct{
-	String** localVariables;
-	String** globalVariables;
-	int localCount;
-	int localCappacity;
-	int globalCount;
+	String** variables;
+	int count;
+	int cappacity;
 }VariableTable;
 
 typedef struct{
@@ -24,7 +22,7 @@ typedef struct{
 	AST* rewrittenAST;
 }Rewriter;
 
-Rewriter* newRewriter(AST* ast, int globalCount);
+Rewriter* newRewriter(AST* ast);
 void freeRewriter(Rewriter* r);
 ASTNode* rewriteNode(Rewriter* rewriter, ASTNode* n);
 AST* rewrite(Rewriter* rewriter, AST* ast);
