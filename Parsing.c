@@ -1,5 +1,21 @@
 #include "Parsing.h"
 
+void freeType(Type* t){
+	if(t != NULL){
+		switch(t->kind){
+			case Trivial_KIND:{
+				free(t);
+				break;
+			}
+			default:{
+				printf("Invalid Kind\n");
+				exit(1);
+				break;
+			}
+		}
+	}
+}
+
 TrivialType getTrivialType(Type* t){
 	if(t->kind == Trivial_KIND) return t->trivial;
 	else return 0;
@@ -883,104 +899,118 @@ void parse(Parser* parser, TokenArray* tokens){
 	tokens->tokens = tokens2;
 }
 
-void freeASTNode(ASTNode* node){
+void freeASTNode(ASTNode* node, bool typeFreeing){
 	ASTNodeType type = node->type;
 	switch(node->type){
 		case ASTBinaryOP_NODE_TYPE :{
-			freeASTNode(node->binaryOP.lhs);
-			freeASTNode(node->binaryOP.rhs);
+			freeASTNode(node->binaryOP.lhs, typeFreeing);
+			freeASTNode(node->binaryOP.rhs, typeFreeing);
 			free(node->binaryOP.lhs);
 			free(node->binaryOP.rhs);
+			if(typeFreeing) freeType(node->binaryOP.t);
 			break;
 		}
 		case ASTString_NODE_TYPE:{
+			if(typeFreeing) freeType(node->str.t);
 			break;
 		}
 		case ASTUnaryOP_NODE_TYPE : {
-			freeASTNode(node->unaryOP.opperand);
+			freeASTNode(node->unaryOP.opperand, typeFreeing);
 			free(node->unaryOP.opperand);
+			if(typeFreeing) freeType(node->unaryOP.t);
 			break;
 		}
 		case ASTCallOP_NODE_TYPE:{
-			freeASTNode(node->callOP.opperand);
+			freeASTNode(node->callOP.opperand, typeFreeing);
 			free(node->callOP.opperand);
+			if(typeFreeing) freeType(node->callOP.t);
 			break;
 		}
 		case ASTID_NODE_TYPE:{
+			if(typeFreeing) freeType(node->id.t);
 			break;
 		}
 		case ASTValue_NODE_TYPE:{
+			if(typeFreeing) freeType(node->value.t);
 			break;
 		}
 		case ASTExpression_NODE_TYPE:{
-			freeASTNode(node->expr.expr);
+			freeASTNode(node->expr.expr, typeFreeing);
 			free(node->expr.expr);
+			if(typeFreeing) freeType(node->expr.t);
 			break;
 		}
 		case ASTPrint_NODE_TYPE:{
-			freeASTNode(node->print.expr);
+			freeASTNode(node->print.expr, typeFreeing);
 			free(node->print.expr);
+			if(typeFreeing) freeType(node->print.t);
 			break;
 		}
 		case ASTBlock_NODE_TYPE:{
-			for(long i = 0; i < node->block.numberOfNodes; i++)	freeASTNode(&node->block.nodes[i]);
+			for(long i = 0; i < node->block.numberOfNodes; i++)	freeASTNode(&node->block.nodes[i], typeFreeing);
+			if(typeFreeing) freeType(node->block.t);
 			break;
 		}
 		case ASTVariable_NODE_TYPE:{
-			freeASTNode(node->var.expr);
+			freeASTNode(node->var.expr, typeFreeing);
 			free(node->var.expr);
+			if(typeFreeing) freeType(node->var.t);
 			break;
 		}
 		case ASTAssignment_NODE_TYPE:{
-			freeASTNode(node->ass.expr);
+			freeASTNode(node->ass.expr, typeFreeing);
 			free(node->ass.expr);
+			if(typeFreeing) freeType(node->ass.t);
 			break;			
 		}
 		case ASTForLoop_NODE_TYPE:{
 			if(node->loop.n1 != NULL) {
-				freeASTNode(node->loop.n1);
+				freeASTNode(node->loop.n1, typeFreeing);
 				free(node->loop.n1);
 			}
 			if(node->loop.n2 != NULL){
-				freeASTNode(node->loop.n2);
+				freeASTNode(node->loop.n2, typeFreeing);
 				free(node->loop.n2);
 			}
 			if(node->loop.n3 != NULL) {
-				freeASTNode(node->loop.n3);
+				freeASTNode(node->loop.n3, typeFreeing);
 				free(node->loop.n3);
 			}
 			if(node->loop.max != NULL) {
-				freeASTNode(node->loop.min);
+				freeASTNode(node->loop.min, typeFreeing);
 				free(node->loop.min);
 			}
 			if(node->loop.max != NULL) {
-				freeASTNode(node->loop.max);
-				free(node->loop.max);
+				freeASTNode(node->loop.max, typeFreeing);
 			}
-			freeASTNode(node->loop.b);
+			freeASTNode(node->loop.b, typeFreeing);
+			if(typeFreeing) freeType(node->loop.t);
 			break;
 		}
 		case ASTIf_NODE_TYPE:{
-			freeASTNode(node->ifS.expr);
+			freeASTNode(node->ifS.expr, typeFreeing);
 			free(node->ifS.expr);
-			freeASTNode(node->ifS.s);
+			freeASTNode(node->ifS.s, typeFreeing);
 			free(node->ifS.s);
 			if(node->ifS.elseS != NULL){
-				freeASTNode(node->ifS.elseS);
+				freeASTNode(node->ifS.elseS, typeFreeing);
 				free(node->ifS.elseS);
 			}
+			if(typeFreeing) freeType(node->ifS.t);
 			break;
 		}
 		case ASTElse_NODE_TYPE:{
-			freeASTNode(node->elseS.s);
+			freeASTNode(node->elseS.s, typeFreeing);
 			free(node->elseS.s);
+			if(typeFreeing) freeType(node->elseS.t);
 			break;
 		}
 		case ASTLoop_NODE_TYPE:{
-			freeASTNode(node->simpleLoop.expr);
+			freeASTNode(node->simpleLoop.expr, typeFreeing);
 			free(node->simpleLoop.expr);
-			freeASTNode(node->simpleLoop.block);
+			freeASTNode(node->simpleLoop.block, typeFreeing);
 			free(node->simpleLoop.block);
+			if(typeFreeing) freeType(node->simpleLoop.t);
 			break;
 		}
 		default : {
@@ -992,13 +1022,13 @@ void freeASTNode(ASTNode* node){
 	//free(node);
 }
 
-void freeAST(AST* ast){
-	for(long i = 0; i < ast->numberOfNodes; i++) freeASTNode(&ast->nodes[i]);
+void freeAST(AST* ast, bool freeType){
+	for(long i = 0; i < ast->numberOfNodes; i++) freeASTNode(&ast->nodes[i], freeType);
 	free(ast);
 }
 
 void freeParser(Parser* parser){
-	freeAST(parser->ast);
+	freeAST(parser->ast, false);
 	free(parser);
 }
 

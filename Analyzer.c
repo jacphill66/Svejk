@@ -115,20 +115,6 @@ Type* copyType(Type* t){
 }
 
 
-void freeType(Type* t){
-	switch(t->kind){
-		case Trivial_KIND:{
-			free(t);
-			break;
-		}
-		default:{
-			printf("Invalid Kind\n");
-			exit(1);
-			break;
-		}
-	}
-}
-
 bool compareTypes(Type* t1, Type* t2){
 	return (getTrivialType(t1) != -1) && getTrivialType(t1) == getTrivialType(t2);
 }
@@ -158,8 +144,8 @@ Type* analyzeBinary(Analyzer* a, ErrorArray* errors, ASTBinaryOP* binOP){
 	Type* type2 = analyzeNode(a, errors, binOP->rhs);
 	TrivialType t1 = getTrivialType(type1);
 	TrivialType t2 = getTrivialType(type2);
-	freeType(type1);
-	freeType(type2);
+	//freeType(type1);
+	//freeType(type2);
 	if(t1 == -1 || t2 == -1) return newTrivialType(TYPE_MISMATCH_ERROR_TYPE);
 	switch (binOP->op){
 		case PLUS_OP:
@@ -198,7 +184,7 @@ Type* analyzeBinary(Analyzer* a, ErrorArray* errors, ASTBinaryOP* binOP){
 Type* analyzeUnary(Analyzer* a, ErrorArray* errors, ASTUnaryOP* unOP){
 	Type* type = analyzeNode(a, errors, unOP->opperand);
 	TrivialType t = getTrivialType(type);
-	freeType(type); 
+	//freeType(type); 
 	switch (unOP->op){
 		case PLUS_OP:
 		case SUB_OP:{
@@ -286,7 +272,8 @@ Type* analyzeAssignment(Analyzer* a, ErrorArray* errors, ASTAssignment* ass){
 Type* analyzeBlock(Analyzer* a, ErrorArray* errors, ASTBlock* b){
 	newTypeScope(a->varTypes);
 	for(int i = 0; i < b->numberOfNodes; i++){
-		freeType(analyzeNode(a, errors, &b->nodes[i]));
+		analyzeNode(a, errors, &b->nodes[i]);
+		//freeType(analyzeNode(a, errors, &b->nodes[i]));
 	}
 	closeTypeScope(a->varTypes);
 	return newTrivialType(VOID_TYPE);
@@ -309,22 +296,25 @@ Type* analyzeLoop(Analyzer* a, ErrorArray* errors, ASTForLoop* loop){
 	if(loop->n1 != NULL){
 		Type* type = analyzeNode(a, errors, loop->n1);
 		TrivialType t = getTrivialType(type);
-		freeType(type);
+		//freeType(type);
+
 		if(t == TYPE_MISMATCH_ERROR_TYPE || (t != BOOL_TYPE && t != I32_TYPE)){
 			char errorMsg[14];
 			strcpy(errorMsg, "For Statement");
 			emitError(errors, newError(newTrivialType(TYPE_MISMATCH_ERROR_TYPE), errorMsg, loop->line));
 		}
+
 		if(loop->n2 != NULL){
-			freeType(analyzeNode(a, errors, loop->n2));
+			//freeType(analyzeNode(a, errors, loop->n2));
 			analyzeNode(a, errors, loop->n3);
 		}
 		//for-in loop, later...
 	}
+
 	if(loop->min != NULL){
 		Type* type = analyzeNode(a, errors, loop->min);
 		TrivialType t = getTrivialType(type);
-		freeType(type);
+		//freeType(type);
 		if(t != I32_TYPE){
 			char* errorMsg;
 			char* msg = "Loop Minimum";
@@ -332,12 +322,11 @@ Type* analyzeLoop(Analyzer* a, ErrorArray* errors, ASTForLoop* loop){
 			emitError(errors, newError(newTrivialType(TYPE_MISMATCH_ERROR_TYPE), errorMsg, loop->line));
 		}
 	}
-
 	//freeType(type);
 	if(loop->max != NULL){
 		Type* type = analyzeNode(a, errors, loop->max);
 		TrivialType t = getTrivialType(type);
-		freeType(type);
+		//freeType(type);
 		if(t != I32_TYPE){
 			char* errorMsg;
 			char* msg = "Loop Maximum";
@@ -347,9 +336,9 @@ Type* analyzeLoop(Analyzer* a, ErrorArray* errors, ASTForLoop* loop){
 	}
 	newTypeScope(a->varTypes);
 	Type* type = analyzeNode(a, errors, loop->b);
-	freeType(type);
+	//freeType(type);
 	closeTypeScope(a->varTypes);
-	closeTypeScope(a->varTypes);
+	closeTypeScope(a->varTypes);	
 	return newTrivialType(VOID_TYPE);
 }	
 
@@ -367,7 +356,7 @@ Type* analyzeIf(Analyzer* a, ErrorArray* errors, ASTIf* ifS){
 		strcpy(errorMsg, msg);
 		emitError(errors, newError(newTrivialType(TYPE_MISMATCH_ERROR_TYPE), errorMsg, ifS->line));
 	}
-	freeType(type);
+	//freeType(type);
 	type = analyzeNode(a, errors, ifS->s);
 	if(ifS->elseS != NULL) analyzeElse(a, errors, &ifS->elseS->elseS);
 	return type;
@@ -446,8 +435,8 @@ Type* analyzeNode(Analyzer* a, ErrorArray* errors, ASTNode* n){
 
 ErrorArray* analyze(Analyzer* a, AST* ast){
 	for(int i = 0; i < ast->numberOfNodes; i++){
-		//analyzeNode(a, a->errors, &ast->nodes[i]);
-		freeType(analyzeNode(a, a->a->errors, &ast->nodes[i]));
+		analyzeNode(a, a->a->errors, &ast->nodes[i]);
+		//freeType(analyzeNode(a, a->a->errors, &ast->nodes[i]));
 	}
 }
 /*

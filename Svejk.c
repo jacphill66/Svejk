@@ -63,6 +63,7 @@ int main(){
 	compile(c, rewrittenAST);
 	freeAnalyzer(analyzer);
 	freeParser(parser);
+	//exit(1);
 	freeRewriter(r);
 	printProgram(c->prog);
 	VM* vm = initVM(c->prog);

@@ -191,8 +191,8 @@ void parse(Parser* parser, TokenArray* tokens);
 void printASTNode(AST* ast, ASTNode* node);
 void printAST(AST* ast);
 
-void freeASTNode(ASTNode* node);
-void freeAST(AST* ast);
+void freeASTNode(ASTNode* node, bool freeType);
+void freeAST(AST* ast, bool freeType);
 void freeParser(Parser* parser);
 
 

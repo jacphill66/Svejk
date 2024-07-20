@@ -348,10 +348,10 @@ void execute(VM* vm){
 				//++vm->stackPtr;				
 				break;
 			}
-			case GET_LOCAL_VAR_OP:{		
+			case GET_LOCAL_VAR_OP:{
 				vm->ip++;
 				*vm->stackPtr = vm->stack[*vm->ip++];
-				++vm->stackPtr;				
+				++vm->stackPtr;	
 				break;
 			}
 			case STR_VAL_OP:{

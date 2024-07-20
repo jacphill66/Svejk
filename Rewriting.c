@@ -418,7 +418,7 @@ void freeVariableTable(VariableTable* t){
 
 void freeRewriter(Rewriter* r){
 	freeVariableTable(r->table);
-	freeAST(r->rewrittenAST);
+	freeAST(r->rewrittenAST, false);
 	free(r);
 }
 

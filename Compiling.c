@@ -134,7 +134,7 @@ void compileASTReference(Compiler* c, ASTID* id){
 		printf("Compiler Error!");
 		exit(1);
 	}
-	if(c->scopeDepth < 1) emitOP(c, GET_GLOBAL_VAR_OP);
+	if(searchScope(c->scopes->head, id->id) != -1) emitOP(c, GET_GLOBAL_VAR_OP);
 	else emitOP(c, GET_LOCAL_VAR_OP);
 	emitOP(c, i);
 }
@@ -146,7 +146,7 @@ void compileASTAssignment(Compiler* c, ASTAssignment* ass){
 		exit(1);
 	}
 	compileASTNode(c, ass->expr);
-	if(c->scopeDepth < 1) emitOP(c, SET_GLOBAL_VAR_OP);
+	if(searchScope(c->scopes->head, ass->id) != -1) emitOP(c, SET_GLOBAL_VAR_OP);
 	else emitOP(c, SET_LOCAL_VAR_OP); 
 	emitOP(c, i);
 }
