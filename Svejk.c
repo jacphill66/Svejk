@@ -63,15 +63,12 @@ int main(){
 	compile(c, rewrittenAST);
 	freeAnalyzer(analyzer);
 	freeParser(parser);
-	//exit(1);
 	freeRewriter(r);
 	printProgram(c->prog);
 	VM* vm = initVM(c->prog);
 	execute(vm);
 	freeCompiler(c);
 	printf("completed\n");
-	exit(1);
-
 	return 0;
 }
 

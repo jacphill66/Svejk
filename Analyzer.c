@@ -122,21 +122,23 @@ bool compareTypes(Type* t1, Type* t2){
 Type* analyzePrint(Analyzer* a, ErrorArray* errors, ASTPrint* p){
 	Type* t = analyzeNode(a, errors, p->expr);
 	if(getTrivialType(t) == TYPE_MISMATCH_ERROR_TYPE){
-		char* errorMsg;
-		strcpy(errorMsg, "Print Statement");
+		size_t size = snprintf(NULL, 0, "Print Statement") + 1;
+		char* errorMsg = (char*)malloc(size);
+		snprintf(errorMsg, size, "Print Statement");
 		emitError(errors, newError(newTrivialType(TYPE_MISMATCH_ERROR_TYPE), errorMsg, p->line));
 	}
-	return t;
+	return copyType(t);
 }
 
 Type* analyzeExpression(Analyzer* a, ErrorArray* errors, ASTExpression* expr){
 	Type* t = analyzeNode(a, errors, expr->expr);
 	if(getTrivialType(t) == TYPE_MISMATCH_ERROR_TYPE){
-		char* errorMsg;
-		strcpy(errorMsg, "Expression");
+		size_t size = snprintf(NULL, 0, "Expression Statement") + 1;
+		char* errorMsg = (char*)malloc(size);
+		snprintf(errorMsg, size, "Expression Statement");
 		emitError(errors, newError(newTrivialType(TYPE_MISMATCH_ERROR_TYPE), errorMsg, expr->line));
 	}
-	return t;
+	return copyType(t);
 }
 
 Type* analyzeBinary(Analyzer* a, ErrorArray* errors, ASTBinaryOP* binOP){
@@ -236,7 +238,7 @@ Type* analyzeVariable(Analyzer* a, ErrorArray* errors, ASTVariable* var){
 		if(a->varTypes->head == a->varTypes->tail) a->a->globalCount++;
 		addToCurrentTypeScope(a->varTypes, var->id, var->type);
 	}
-	return t;
+	return newTrivialType(VOID_TYPE);
 }
 
 Type* analyzeVariableReference(Analyzer* a, ErrorArray* errors, ASTID* id){
@@ -266,7 +268,7 @@ Type* analyzeAssignment(Analyzer* a, ErrorArray* errors, ASTAssignment* ass){
 		snprintf(errorMsg, size, "Variable Assignment \"%s\"", ass->id);
 		emitError(errors, newError(newTrivialType(TYPE_MISMATCH_ERROR_TYPE), errorMsg, ass->line));
 	}
-	return t;
+	return newTrivialType(VOID_TYPE);
 }
 
 Type* analyzeBlock(Analyzer* a, ErrorArray* errors, ASTBlock* b){
@@ -290,23 +292,28 @@ Type* analyzeString(Analyzer* a, ErrorArray* errors, ASTString* str){
 }
 
 Type* analyzeLoop(Analyzer* a, ErrorArray* errors, ASTForLoop* loop){
-	//figure out the type, then type check it, append types
-	//if(){}
 	newTypeScope(a->varTypes);
 	if(loop->n1 != NULL){
 		Type* type = analyzeNode(a, errors, loop->n1);
 		TrivialType t = getTrivialType(type);
 		//freeType(type);
-
-		if(t == TYPE_MISMATCH_ERROR_TYPE || (t != BOOL_TYPE && t != I32_TYPE)){
+		if(t == TYPE_MISMATCH_ERROR_TYPE){
 			char errorMsg[14];
 			strcpy(errorMsg, "For Statement");
 			emitError(errors, newError(newTrivialType(TYPE_MISMATCH_ERROR_TYPE), errorMsg, loop->line));
 		}
 
 		if(loop->n2 != NULL){
-			//freeType(analyzeNode(a, errors, loop->n2));
+			analyzeNode(a, errors, loop->n2);
 			analyzeNode(a, errors, loop->n3);
+
+		}
+		else{
+			if(t != BOOL_TYPE && t != I32_TYPE){
+				char errorMsg[14];
+				strcpy(errorMsg, "For Statement");
+				emitError(errors, newError(newTrivialType(TYPE_MISMATCH_ERROR_TYPE), errorMsg, loop->line));
+			}
 		}
 		//for-in loop, later...
 	}
@@ -344,7 +351,7 @@ Type* analyzeLoop(Analyzer* a, ErrorArray* errors, ASTForLoop* loop){
 
 Type* analyzeElse(Analyzer* a, ErrorArray* errors, ASTElse* elseS){
 	elseS->t = analyzeNode(a, errors, elseS->s);
-	return elseS->t;
+	return newTrivialType(VOID_TYPE);
 }
 
 Type* analyzeIf(Analyzer* a, ErrorArray* errors, ASTIf* ifS){
@@ -359,7 +366,7 @@ Type* analyzeIf(Analyzer* a, ErrorArray* errors, ASTIf* ifS){
 	//freeType(type);
 	type = analyzeNode(a, errors, ifS->s);
 	if(ifS->elseS != NULL) analyzeElse(a, errors, &ifS->elseS->elseS);
-	return type;
+	return newTrivialType(VOID_TYPE);
 }
 
 Type* analyzeNode(Analyzer* a, ErrorArray* errors, ASTNode* n){
@@ -491,7 +498,7 @@ void freeErrorArray(ErrorArray* errorArray){
 
 void freeAnalysis(Analysis* a){
 	freeErrorArray(a->errors);
-	freeTree(a->strings);
+	freeTreeNoKeys(a->strings);
 	free(a);
 }
 

@@ -1028,7 +1028,7 @@ void freeAST(AST* ast, bool freeType){
 }
 
 void freeParser(Parser* parser){
-	freeAST(parser->ast, false);
+	freeAST(parser->ast, true);
 	free(parser);
 }
 

@@ -216,6 +216,7 @@ void dumpStack(VM* vm){
 }	
 
 void execute(VM* vm){
+	int i = 0;
 	for(;;){
 		switch(*vm->ip){
 			case PLUS_OP: {
@@ -374,8 +375,17 @@ void execute(VM* vm){
 			case JMP_ON_FALSE_OP:{
 				vm->ip++;
 				vm->stackPtr--;
-				if (!vm->stackPtr->boolean) vm->ip += *vm->ip;
-				else vm->ip++;	
+				if (!vm->stackPtr->boolean) {
+					vm->ip += *vm->ip;
+				}
+				else {
+					vm->ip++;	
+				}
+				break;
+			}
+			case DUMP_OP:{
+				dumpStack(vm);
+				exit(1);
 				break;
 			}
 			default: {

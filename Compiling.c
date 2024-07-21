@@ -117,14 +117,10 @@ void compileASTPrint(Compiler* c, ASTPrint* print){
 }
 void compileASTVariable(Compiler* c, ASTVariable* var){
 	compileASTNode(c, var->expr);
+	addToCurrentScope(c->scopes, var->id, -1, -1);
 	if(c->scopeDepth < 1) {
-		addToCurrentScope(c->scopes, var->id, -1, -1);
 		emitOP(c, SET_GLOBAL_VAR_OP);
 		emitOP(c, c->prog->globalCount++);
-	}
-	else{
-		addToCurrentScope(c->scopes, var->id, -1, -1);
-		compileASTNode(c, var->expr);	
 	}
 }
 
@@ -462,6 +458,10 @@ void printOPS(Program* p){
 				printf("%d]", p->ops->ops[i]);
 				break;
 			}
+			case DUMP_OP:{
+				printf("dump");
+				break;
+			}
 			default: {
 				printf("Can't Print OP\n");
 				exit(1);
@@ -512,6 +512,7 @@ Program* compile(Compiler* c, AST* ast){
 	for(int i = 0; i < c->ast->numberOfNodes; i++){
 		compileASTNode(c, &c->ast->nodes[i]);
 	}
+	emitOP(c, DUMP_OP);
 	emitOP(c, HALT_OP);
 	return c->prog;
 }

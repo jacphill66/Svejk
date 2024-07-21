@@ -51,6 +51,8 @@ typedef enum{
 	JMP_BACK_OP,
 	JMP_ON_FALSE_OP,
 	
+	DUMP_OP,
+
 }OPCode;
 
 typedef enum {
