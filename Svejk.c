@@ -164,3 +164,6 @@ TODO:
 		Add transpiler: transpiles it to various languages		
 
 */
+
+//problem has to be with global variables messing with scope, right?
+//offsets are a fucking mess .. .fix them!

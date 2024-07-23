@@ -26,7 +26,10 @@ void newScope(ScopeChain* sc){
 		sc->tail->next = newScopeNode(newTree(), NULL, sc->tail);
 		sc->tail = sc->tail->next;
 	}
-	if(sc->tail->prev != NULL) sc->tail->offset = sc->tail->prev->offset;
+	if(sc->tail->prev != NULL && sc->tail->prev->prev != NULL){
+		sc->tail->offset = sc->tail->prev->offset;
+	}
+	//for global scope
 }
 
 void closeScope(ScopeChain* sc){
@@ -46,11 +49,7 @@ void closeScope(ScopeChain* sc){
 void addToCurrentScope(ScopeChain* sc, char* id, int idSize, int t){
 	Value v;
 	v.i32 = sc->tail->offset;
-	if(t == -1) insert(sc->tail->scope, id, idSize, v);
-	else {
-		v.i32 = t;
-		insert(sc->tail->scope, id, idSize, v);
-	}
+	insert(sc->tail->scope, id, idSize, v);
 	sc->tail->offset += 1;
 }
 
