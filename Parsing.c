@@ -204,6 +204,7 @@ void printASTNode(AST* ast, ASTNode* node){
 				printASTNode(ast, &node->block.nodes[i]);
 				printf("\n");
 			}
+			printf("]\n");
 			break;
 		}
 		case ASTForLoop_NODE_TYPE:{

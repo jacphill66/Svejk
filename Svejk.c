@@ -45,7 +45,7 @@ int main(){
 	char* inferenceTest = "tests/Inference Test.txt";
 	char* forTest = "tests/for Test.txt";
 	char* ifTest = "tests/If Test.txt";
-	lex(tokens, forTest);
+	lex(tokens, ifTest);
 	printTokens(tokens);
 	Parser* parser = newParser();
 	parse(parser, tokens);
@@ -153,6 +153,7 @@ TODO:
 			In rewriter and analyzer, don't pass ast node, pass the specific type
 		Add annotations and add them to ast objects
 		Add rewriting to print
+		Maybe switch the rewriting of loops
 		ASTPrint should only print offsets with a flag parameter set - not that important
 		Optimize opcodes after compiling?, get rid of vestigal stuff with oparray, etc ...
 		get rid of the -1 for types in add to current scope

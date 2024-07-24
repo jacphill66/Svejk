@@ -99,7 +99,7 @@ ASTNode* uniqueVariable(VariableTable* t, ASTNode* expr){
 	ASTNode* n = (ASTNode*)malloc(sizeof(ASTNode));
 	ASTVariable var;
 	var.id = uniqueID(t)->str;
-	printf("%s\n", var.id);
+	//printf("%s\n", var.id);
 	var.expr = expr;
 	var.type = NULL;
 	n->var = var;
@@ -275,13 +275,17 @@ ASTNode* rewriteLoopType3(Rewriter* rewriter, ASTNode* loop){
 	newLoop->type = ASTLoop_NODE_TYPE;
 	ASTLoop nLoop;
 	nLoop.expr = binOP;
+
 	nLoop.block = rewriteNode(rewriter, loop->loop.b);
+
 	newLoop->simpleLoop = nLoop;
 
 	ASTNode* inc = (ASTNode*)malloc(sizeof(ASTNode));
 	inc->type = ASTAssignment_NODE_TYPE;
 	inc->ass.id = var->var.id;
 	ASTNode* addOne = (ASTNode*)malloc(sizeof(ASTNode));
+	addOne->type = ASTBinaryOP_NODE_TYPE;
+	addOne->binaryOP.op = PLUS_OP;
 	addOne->binaryOP.lhs = (ASTNode*)malloc(sizeof(ASTNode));
 	addOne->binaryOP.rhs = (ASTNode*)malloc(sizeof(ASTNode));
 	addOne->binaryOP.lhs->type = ASTID_NODE_TYPE;
@@ -374,7 +378,11 @@ ASTNode* rewriteNode(Rewriter* rewriter, ASTNode* n){
 		case ASTBlock_NODE_TYPE:{
 			return rewriteBlock(rewriter, n);
 		}
-		case ASTForLoop_NODE_TYPE:{
+		case ASTForLoop_NODE_TYPE:{//should be a and b for local variables
+			//printf("Start\n");
+			//ASTNode* n2 = rewriteForLoop(rewriter, n);
+			//printASTNode(rewriter->rewrittenAST, n2);
+			//printf("End\n");
 			return rewriteForLoop(rewriter, n);
 		}
 		case ASTIf_NODE_TYPE:{
