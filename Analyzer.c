@@ -176,6 +176,9 @@ Type* analyzeBinary(Analyzer* a, ErrorArray* errors, ASTBinaryOP* binOP){
 			if((t1 == I32_TYPE || t1 == F32_TYPE) && (t2 == I32_TYPE || t2 == F32_TYPE)) return newTrivialType(BOOL_TYPE);
 			else return newTrivialType(TYPE_MISMATCH_ERROR_TYPE);		
 		}
+		case EQUAL_OP:{
+			return newTrivialType(BOOL_TYPE);
+		}
 		default:{
 			return newTrivialType(TYPE_MISMATCH_ERROR_TYPE);
 		}	
@@ -350,7 +353,8 @@ Type* analyzeLoop(Analyzer* a, ErrorArray* errors, ASTForLoop* loop){
 }	
 
 Type* analyzeElse(Analyzer* a, ErrorArray* errors, ASTElse* elseS){
-	elseS->t = analyzeNode(a, errors, elseS->s);
+	elseS->t = newTrivialType(VOID_TYPE);
+	analyzeNode(a, errors, elseS->s);
 	return newTrivialType(VOID_TYPE);
 }
 
@@ -364,9 +368,10 @@ Type* analyzeIf(Analyzer* a, ErrorArray* errors, ASTIf* ifS){
 		emitError(errors, newError(newTrivialType(TYPE_MISMATCH_ERROR_TYPE), errorMsg, ifS->line));
 	}
 	//freeType(type);
-	type = analyzeNode(a, errors, ifS->s);
+	analyzeNode(a, errors, ifS->s);
 	if(ifS->elseS != NULL) analyzeElse(a, errors, &ifS->elseS->elseS);
-	return newTrivialType(VOID_TYPE);
+	ifS->t = newTrivialType(VOID_TYPE);
+	return ifS->t;
 }
 
 Type* analyzeNode(Analyzer* a, ErrorArray* errors, ASTNode* n){

@@ -136,6 +136,32 @@
 	} \
 	++vm->stackPtr; \
 
+#define EQUALITY_OP()\
+	--vm->stackPtr; \
+	Value v = *vm->stackPtr; \
+	--vm->stackPtr; \
+	if (v.type == I32_VAL && vm->stackPtr->type == I32_VAL) { \
+		vm->stackPtr->type = BOOL_VAL; \
+		vm->stackPtr->boolean = vm->stackPtr->i32 == v.i32; \
+	} \
+	else if (v.type == F32_VAL && vm->stackPtr->type == F32_VAL) { \
+		vm->stackPtr->type = BOOL_VAL; \
+		vm->stackPtr->boolean = vm->stackPtr->f32 == v.f32; \
+	} \
+	else if (v.type == BOOL_VAL && vm->stackPtr->type == BOOL_VAL) { \
+		vm->stackPtr->type = BOOL_VAL; \
+		vm->stackPtr->boolean = vm->stackPtr->boolean == v.boolean; \
+	} \
+	else if (v.type == STR_VAL && vm->stackPtr->type == STR_VAL) { \
+		vm->stackPtr->type = BOOL_VAL; \
+		vm->stackPtr->boolean = vm->stackPtr->i32 == v.i32; \
+	} \
+	else { \
+		printf("Equality Op Error"); \
+		exit(1); \
+	} \
+	++vm->stackPtr; \
+	
 #define COMPARITIVE_BINARY_OP(op) \
 	--vm->stackPtr; \
 	Value v = *vm->stackPtr; \
@@ -280,7 +306,7 @@ void execute(VM* vm){
 				break;
 			}
 			case EQUAL_OP: {
-				COMPARITIVE_BINARY_OP(==);
+				EQUALITY_OP();
 				vm->ip++;
 				break;
 			}
