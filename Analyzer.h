@@ -5,6 +5,7 @@
 #include "Common.h"
 #include "ScopeChain.h"
 #include "TypeMap.h"
+#include "ASTObject.h"
 
 typedef struct {
 	Type* type;

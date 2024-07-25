@@ -1,305 +1,5 @@
 #include "Parsing.h"
 
-void freeType(Type* t){
-	if(t != NULL){
-		switch(t->kind){
-			case Trivial_KIND:{
-				free(t);
-				break;
-			}
-			default:{
-				printf("Invalid Kind\n");
-				exit(1);
-				break;
-			}
-		}
-	}
-}
-
-TrivialType getTrivialType(Type* t){
-	if(t->kind == Trivial_KIND) return t->trivial;
-	else return 0;
-}
-
-Type* newTrivialType(TrivialType type){
-	Type* t = (Type*)malloc(sizeof(Type));
-	t->kind = Trivial_KIND;
-	t->trivial = type;
-	return t;
-}
-
-void printOP(OPCode op){
-	switch(op){
-		case PLUS_OP:{
-			printf("+");
-			break;
-		}
-		case SUB_OP:{
-			printf("-");
-			break;
-		}
-		case MULT_OP:{
-			printf("*");
-			break;
-		}
-		case DIV_OP:{
-			printf("/");
-			break;
-		}
-		case REM_OP:{
-			printf("%c", '%');
-			break;
-		}
-		case EXP_OP:{
-			printf("^");
-			break;
-		}
-		case FACT_OP:{
-			printf("!");
-			break;
-		}
-		case AND_OP:{
-			printf("and");
-			break;
-		}
-		case OR_OP:{
-			printf("or");
-			break;
-		}
-		case NOT_OP:{
-			printf("not");
-			break;
-		}
-		case UNARY_PLUS_OP:{
-			printf("+");
-			break;
-		}
-		case UNARY_MINUS_OP:{
-			printf("-");
-			break;
-		}
-		case EQUAL_OP:{
-			printf("==");
-			break;
-		}
-		case LESS_OP:{
-			printf("<");
-			break;
-		}
-		case GREATER_OP:{
-			printf(">");
-			break;
-		}
-		case LOE_OP:{
-			printf("<=");
-			break;
-		}
-		case GOE_OP:{
-			printf("==");
-			break;
-		}
-
-	}
-}
-
-void printASTNode(AST* ast, ASTNode* node){
-	ASTNodeType type = node->type;
-	switch(type){
-		case ASTBinaryOP_NODE_TYPE :{
-			printf("(");
-			printASTNode(ast, node->binaryOP.lhs);
-			printOP(node->binaryOP.op);
-			printASTNode(ast, node->binaryOP.rhs);
-			printf(")");
-			break;
-		}
-		case ASTUnaryOP_NODE_TYPE : {
-			printf("(");
-			if(node->unaryOP.op == FACT_OP){
-				printASTNode(ast, node->unaryOP.opperand);
-				printOP(node->unaryOP.op);
-			}
-			else{
-				printOP(node->unaryOP.op);
-				printASTNode(ast, node->unaryOP.opperand);
-			}
-			printf(")");
-			break;
-		}
-		case ASTString_NODE_TYPE : {
-			printf("String[");
-			printf("%s", node->str.str);
-			printf("]");
-			break;
-		}
-		case ASTCallOP_NODE_TYPE:{
-			printASTNode(ast, node->callOP.opperand);
-			printf("()");
-			break;
-		}
-		case ASTID_NODE_TYPE:{
-			printf("ID[%s]", node->id.id);
-			break;
-		}
-		case ASTValue_NODE_TYPE:{
-			switch(node->value.v.type){
-				case I32_VAL :{
-					printf("%d", node->value.v.i32);
-					break;
-				}
-				case F32_VAL:{
-					printf("%f", node->value.v.f32);
-					break;
-				}
-				case BOOL_VAL:{
-					if(node->value.v.boolean){
-						printf("true");
-					}
-					else{ 
-						printf("false");
-					}
-					break;
-				}
-				case STR_VAL:{
-					//printf("%s", ast->strings[node->value.v.i32]);
-					break;
-				}
-				default : {
-					printf("%d\n", node->type);
-					printf("Cannot print value of given type 1");
-					exit(1);
-				}
-			}
-			break;
-		}
-		case ASTExpression_NODE_TYPE:{
-			printf("Expression[");
-			printASTNode(ast, node->expr.expr);
-			printf("]");
-			break;
-		}
-		case ASTPrint_NODE_TYPE:{
-			printf("Print[");
-			printASTNode(ast, node->print.expr);
-			printf("]");
-			break;
-		}
-		case ASTVariable_NODE_TYPE:{
-			printf("Variable[");
-			printf("Id:%s, Expression:", node->var.id);
-			printASTNode(ast, node->var.expr);
-			printf("]");
-			break;
-		}
-		case ASTAssignment_NODE_TYPE:{
-			printf("Assignment[");
-			printf("Id:%s, Expression:", node->ass.id);
-			printASTNode(ast, node->ass.expr);
-			printf("]");
-			break;
-		}
-		case ASTBlock_NODE_TYPE:{
-			printf("Block[\n");
-			for(int i = 0; i < node->block.numberOfNodes; i++) {
-				printASTNode(ast, &node->block.nodes[i]);
-				printf("\n");
-			}
-			printf("]\n");
-			break;
-		}
-		case ASTForLoop_NODE_TYPE:{
-			printf("for ");
-			if(node->loop.n1 != NULL){
-				printf("NODE1=[");
-				printASTNode(ast, node->loop.n1);
-				printf("]");
-			}
-			if(node->loop.n2 != NULL) {
-				if(node->loop.n3 == NULL){
-					/*// work this out...
-					printf(" in ");
-					printf("COLLECTION=[");
-					printASTNode(ast, node->loop.n2);
-					printf("] ");*/
-				}
-				else{
-					printf("NODE2=[");
-					printASTNode(ast, node->loop.n2);
-					printf("] ");
-					if(node->loop.n3 != NULL){
-						printf("NODE3=[");
-						printASTNode(ast, node->loop.n3);
-						printf("]");
-					}
-				}
-			}
-			printf("[");
-			if(node->loop.min != NULL){
-				printf("MIN=[");
-				printASTNode(ast, node->loop.min);
-				printf("]");
-			}
-			printf(", ");
-			if(node->loop.max != NULL) {
-				printf("MAX=[");
-				printASTNode(ast, node->loop.max);
-				printf("]");
-			}
-			printf("]");
-			printf("{\n");
-			printASTNode(ast, node->loop.b);
-			printf("}");
-			break;
-		}
-		case ASTLoop_NODE_TYPE:{
-			printf("for ");
-			printASTNode(ast, node->simpleLoop.expr);
-			printf("{\n");
-			printASTNode(ast, node->simpleLoop.block);
-			printf("}");
-			break;
-		}
-		case ASTIf_NODE_TYPE:{
-			printf("if ");
-			printASTNode(ast, node->ifS.expr);
-			printASTNode(ast, node->ifS.s);
-			printf("\n");
-			if(node->ifS.elseS != NULL) {
-				printf("( "); printASTNode(ast, node->ifS.elseS); printf(" )");
-			}
-			break;
-		}
-		case ASTElse_NODE_TYPE:{
-			printf("else ");
-			printASTNode(ast, node->elseS.s);
-			break;
-		}
-		default : {
-			printf("Cannot print node of given type\n"); 
-			printf("%d",type);
-			exit(1);
-		}
-	}
-}
-
-void printAST(AST* ast){
-	printf("AST:\n");
-	for(long i = 0; i < ast->numberOfNodes; i++){
-		printASTNode(ast, &ast->nodes[i]); printf("\n");
-	}
-	printf("\n");
-}
-
-ASTNode* resizeNodes(ASTNode* nodes, long cappacity){
-	ASTNode* newNodes = (ASTNode*)realloc(nodes, 2*cappacity*sizeof(ASTNode));
-	if(newNodes == NULL){
-		printf("could not resize AST-Nodes!\n");
-		free(nodes);
-		exit(1);
-	}
-	return newNodes;
-}
-
 Token advance(TokenArray* tokens){
 	Token token = *(tokens->tokens);
 	tokens->tokens += 1;
@@ -382,203 +82,50 @@ int getOtherfixPrecedence(TokenType t){
 	return precedence[t];
 }
 
-bool validExpressionToken(TokenArray* tokens){	
-	TokenType validTypes[] = {
-		I32_VAL_TOKEN,
-		F32_VAL_TOKEN,
-		STR_VAL_TOKEN,
-		TRUE_VAL_TOKEN,
-		FALSE_VAL_TOKEN,
-		
-		ID_TOKEN,
-
-		PLUS_OP_TOKEN,
-		SUB_OP_TOKEN,
-		MULT_OP_TOKEN,
-		DIV_OP_TOKEN,
-		REM_OP_TOKEN,
-		
-		FACT_OP_TOKEN,
-		
-		EQUAL_OP_TOKEN,
-		
-		LESS_OP_TOKEN,
-		GREATER_OP_TOKEN,
-		LOE_OP_TOKEN,
-		GOE_OP_TOKEN,
-		
-		AND_OP_TOKEN,
-		OR_OP_TOKEN,
-		NOT_OP_TOKEN,
-		
-		LPAREN_OP_TOKEN,
-	};
-	for(int i = 0; i < 21; i++){
-		if(validTypes[i] == tokens->tokens->type){
-			return true;
-		}
-	}
-	return false;
-}
-
 ASTNode* literal(Parser* parser, Token t){
-	ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
 	switch(t.type){
-		case I32_VAL_TOKEN : {
-			node->type = ASTValue_NODE_TYPE;
-			Value v;
-			v.type = I32_VAL;
-			v.i32 = atoi(t.value);
-			ASTValue val = {v, t.line};
-			node->value = val;
-			return node;
-		}
-		case F32_VAL_TOKEN:{
-			node->type = ASTValue_NODE_TYPE;
-			Value v;
-			v.type = F32_VAL;
-			v.f32 = atof(t.value);
-			ASTValue val = {v, t.line};
-			node->value = val;
-			return node;
-		}
-		case STR_VAL_TOKEN:{
-			node->type = ASTString_NODE_TYPE;
-			ASTString str = {t.value, t.line};
-			node->str = str;
-			return node;
-		}
-		case TRUE_VAL_TOKEN:{
-			node->type = ASTValue_NODE_TYPE;
-			Value v;
-			v.type = BOOL_VAL;
-			v.boolean = true;
-			ASTValue val = {v, t.line};
-			node->value = val;
-			return node;	
-		}
-		case FALSE_VAL_TOKEN:{
-			node->type = ASTValue_NODE_TYPE;
-			Value v;
-			v.type = BOOL_VAL;
-			v.boolean = false;
-			ASTValue val = {v, t.line};
-			node->value = val;
-			return node;	
-		}
-		case ID_TOKEN:{
-			ASTID id = {t.value, t.line};
-			node->id = id;
-			node->type = ASTID_NODE_TYPE;
-			return node;
-		}
+		case I32_VAL_TOKEN : return newASTValue(newI32(atoi(t.value)), t.line, NULL);
+		case F32_VAL_TOKEN: return newASTValue(newF32(atof(t.value)), t.line, NULL);
+		case STR_VAL_TOKEN: return newASTString(t.value, t.line, NULL);
+		case TRUE_VAL_TOKEN: return newASTValue(newBool(true), t.line, NULL);
+		case FALSE_VAL_TOKEN: return newASTValue(newBool(false), t.line, NULL);
+		case ID_TOKEN: return newASTID(t.value, t.line, NULL);
 	}
 }
 
 ASTNode* prefix(Parser* parser, TokenArray* tokens){
 	Token t = advance(tokens);
-	ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
 	if(t.type == LPAREN_OP_TOKEN){
 		ASTNode* result = split(parser, tokens, 0);
 		advance(tokens);
 		return result;
 	}
 	switch(t.type){
-		case PLUS_OP_TOKEN:{
-			node->type = ASTUnaryOP_NODE_TYPE;
-			ASTUnaryOP uOP = {UNARY_PLUS_OP, split(parser, tokens, getPrefixPrec(t.type)+1), t.line};
-			node->unaryOP = uOP;
-			return node;
-		}
-		case SUB_OP_TOKEN:{
-			node->type = ASTUnaryOP_NODE_TYPE;		
-			ASTUnaryOP uOP = {UNARY_MINUS_OP, split(parser, tokens, getPrefixPrec(t.type)+1), t.line};
-			node->unaryOP = uOP;
-			return node;
-		}
-		case NOT_OP_TOKEN:{
-			node->type = ASTUnaryOP_NODE_TYPE;		
-			ASTUnaryOP uOP = {NOT_OP, split(parser, tokens, getPrefixPrec(t.type)+1), t.line};
-			node->unaryOP = uOP;
-			return node;
-		}
-		default:{
-			return literal(parser, t);
-		}
+		case PLUS_OP_TOKEN: return newASTUnaryOP(split(parser, tokens, getPrefixPrec(t.type)+1), UNARY_PLUS_OP, t.line, NULL);
+		case SUB_OP_TOKEN: return newASTUnaryOP(split(parser, tokens, getPrefixPrec(t.type)+1), UNARY_MINUS_OP, t.line, NULL);
+		case NOT_OP_TOKEN: return newASTUnaryOP(split(parser, tokens, getPrefixPrec(t.type)+1), NOT_OP, t.line, NULL);
+		default: return literal(parser, t);
 	}
 }
 
 ASTNode* binaryOP(Parser* parser, Token op, ASTNode* lhs, TokenArray* tokens){
-	ASTNode* n = (ASTNode*) malloc(sizeof(ASTNode));
-	n->type = ASTBinaryOP_NODE_TYPE;
-	ASTBinaryOP binOP;
-	binOP.line = op.line;
+	ASTNode* rhs;
+	if(op.type == EXP_OP_TOKEN)	rhs = split(parser, tokens, getOtherfixPrecedence(op.type));
+	else rhs = split(parser, tokens, getOtherfixPrecedence(op.type)+1);
 	switch(op.type){
-		case EQUAL_OP_TOKEN :{
-			binOP.lhs = lhs;
-			binOP.op = EQUAL_OP;
-			break;
-		}
-		case LESS_OP_TOKEN : {
-			binOP.lhs = lhs;
-			binOP.op = LESS_OP;
-			break;
-		}
-		case GREATER_OP_TOKEN : {
-			binOP.lhs = lhs;
-			binOP.op = GREATER_OP;
-			break;
-		}
-		case LOE_OP_TOKEN : {
-			binOP.lhs = lhs;
-			binOP.op = LOE_OP;
-			break;
-		}
-		case GOE_OP_TOKEN : {
-			binOP.lhs = lhs;
-			binOP.op = GOE_OP;
-			break;
-		}				
-		case AND_OP_TOKEN : {
-			binOP.lhs = lhs;
-			binOP.op = AND_OP;
-			break;
-		}
-		case OR_OP_TOKEN : {
-			binOP.lhs = lhs;
-			binOP.op = OR_OP;
-			break;
-		}
-		case PLUS_OP_TOKEN : {
-			binOP.lhs = lhs;
-			binOP.op = PLUS_OP;
-			break;
-		}
-		case SUB_OP_TOKEN : {
-			binOP.lhs = lhs;
-			binOP.op = SUB_OP;
-			break;
-		}
-		case MULT_OP_TOKEN : {
-			binOP.lhs = lhs;
-			binOP.op = MULT_OP;
-			break;
-		}
-		case DIV_OP_TOKEN : {
-			binOP.lhs = lhs;
-			binOP.op = DIV_OP;
-			break;
-		}
-		case REM_OP_TOKEN : {
-			binOP.lhs = lhs;
-			binOP.op = REM_OP;
-			break;
-		}		
-		case EXP_OP_TOKEN: {
-			binOP.lhs = lhs;
-			binOP.op = EXP_OP;
-			break;
-		}
+		case EQUAL_OP_TOKEN : return newASTBinaryOP(lhs, EQUAL_OP, rhs, op.line, NULL);
+		case LESS_OP_TOKEN : return newASTBinaryOP(lhs, LESS_OP, rhs, op.line, NULL);
+		case GREATER_OP_TOKEN :	return newASTBinaryOP(lhs, GREATER_OP, rhs, op.line, NULL);
+		case LOE_OP_TOKEN : return newASTBinaryOP(lhs, LOE_OP, rhs, op.line, NULL);
+		case GOE_OP_TOKEN : return newASTBinaryOP(lhs, GOE_OP, rhs, op.line, NULL);	
+		case AND_OP_TOKEN : return newASTBinaryOP(lhs, AND_OP, rhs, op.line, NULL);
+		case OR_OP_TOKEN : return newASTBinaryOP(lhs, OR_OP, rhs, op.line, NULL);
+		case PLUS_OP_TOKEN : return newASTBinaryOP(lhs, PLUS_OP, rhs, op.line, NULL);
+		case SUB_OP_TOKEN :  return newASTBinaryOP(lhs, SUB_OP, rhs, op.line, NULL);
+		case MULT_OP_TOKEN :  return newASTBinaryOP(lhs, MULT_OP, rhs, op.line, NULL);
+		case DIV_OP_TOKEN :  return newASTBinaryOP(lhs, DIV_OP, rhs, op.line, NULL);
+		case REM_OP_TOKEN : return newASTBinaryOP(lhs, REM_OP, rhs, op.line, NULL);
+		case EXP_OP_TOKEN: return newASTBinaryOP(lhs, EXP_OP, rhs, op.line, NULL);
 		default:{
 			printf("Unidentified Binary OP");
 			exit(1);
@@ -586,37 +133,14 @@ ASTNode* binaryOP(Parser* parser, Token op, ASTNode* lhs, TokenArray* tokens){
 	}
 	//if op is right associative
 	//if op is left associative
-	if(op.type == EXP_OP_TOKEN){
-		binOP.rhs = split(parser, tokens, getOtherfixPrecedence(op.type));
-	}
-	else{
-		binOP.rhs = split(parser, tokens, getOtherfixPrecedence(op.type)+1);
-	}
-	n->binaryOP = binOP;
-	return n;
 }
 
 ASTNode* otherfix(Parser* parser, ASTNode* node, TokenArray* tokens){
 	Token token = advance(tokens);
 	switch(token.type){		
-		case LPAREN_OP_TOKEN : {
-			advance(tokens);
-			ASTNode* n = (ASTNode*) malloc(sizeof(ASTNode));
-			ASTCallOP cOP = {node, token.line}; 
-			n->callOP = cOP;
-			n->type = ASTCallOP_NODE_TYPE;
-			return n;
-		}
-		case FACT_OP_TOKEN: {
-			ASTNode* n = (ASTNode*) malloc(sizeof(ASTNode));
-			ASTUnaryOP uOP = {FACT_OP, node, token.line}; 
-			n->unaryOP = uOP;
-			n->type = ASTUnaryOP_NODE_TYPE;
-			return n;
-		}
-		default :{
-			return binaryOP(parser, token, node, tokens);
-		}
+		case LPAREN_OP_TOKEN:return NULL;//callop
+		case FACT_OP_TOKEN:return newASTUnaryOP(node, FACT_OP, token.line, NULL);
+		default: return binaryOP(parser, token, node, tokens);
 	}
 }
 
@@ -626,24 +150,6 @@ ASTNode* split(Parser* parser, TokenArray* tokens, int prec){
 		lhs = otherfix(parser, lhs, tokens);
 	}
 	return lhs;
-}
-
-void emitNode(ASTNode* node, AST* ast){
-	ast->nodes[ast->numberOfNodes] = *node;
-	ast->numberOfNodes++;
-	if(ast->numberOfNodes == ast->cappacity){
-		ast->nodes = resizeNodes(ast->nodes, ast->cappacity);
-		ast->cappacity *= 2;
-	}
-}
-
-void emitNodeToBlock(ASTNode* node, ASTNode* b){
-	b->block.nodes[b->block.numberOfNodes] = *node;
-	b->block.numberOfNodes++;
-	if(b->block.numberOfNodes == b->block.cappacity){
-		b->block.nodes = resizeNodes(b->block.nodes, b->block.cappacity);
-		b->block.cappacity *= 2;
-	}
 }
 
 ASTNode* parseExpression(TokenArray* tokens, Parser* parser){
@@ -739,21 +245,9 @@ ASTNode* parseAssignmentOrReference(TokenArray* tokens, Parser* parser){
 	return parseExpression(tokens, parser);
 }
 
-ASTNode* newBlock(){
-	ASTNode* n = malloc(sizeof(ASTNode));
-	ASTBlock b;
-	b.nodes = (ASTNode*)malloc(sizeof(ASTNode));
-	b.cappacity = 1;
-	b.numberOfNodes = 0;
-	b.variableCount = 0;
-	n->block = b;
-	n->type = ASTBlock_NODE_TYPE;
-	return n;
-}
-
 ASTNode* parseBlockExpression(TokenArray* tokens, Parser* parser){
-	ASTNode* b = newBlock();
-	advance(tokens);
+	Token t = advance(tokens);
+	ASTNode* b = newASTBlock(t.line, NULL);
 	while(tokens->tokens->type != RC_BRACKET_TOKEN){
 		parseLocal(parser, b, tokens);
 	}
@@ -764,18 +258,6 @@ ASTNode* parseBlockExpression(TokenArray* tokens, Parser* parser){
 ASTNode* parseBlockOrTable(TokenArray* tokens, Parser* p){
 	//parse a statement. if it is an expression, extract it, parse a dictionary
 	return parseBlockExpression(tokens, p);
-}
-
-ASTNode* newLoop(){
-	ASTNode* loop = (ASTNode*)malloc(sizeof(ASTNode));
-	loop->loop.n1 = NULL;
-	loop->loop.n2 = NULL;
-	loop->loop.n3 = NULL;
-	loop->loop.min = NULL;
-	loop->loop.max = NULL;
-	loop->loop.b = NULL;
-	loop->type = ASTForLoop_NODE_TYPE;
-	return loop;
 }
 
 ASTNode* parseElse(TokenArray* tokens, Parser* p){
@@ -806,8 +288,8 @@ ASTNode* parseIf(TokenArray* tokens, Parser* p){
 
 ASTNode* parseFor(TokenArray* tokens, Parser* parser){
 	Token t = advance(tokens);
-	ASTNode* b = newBlock();
-	ASTNode* loop = newLoop();
+	ASTNode* b = newASTBlock(t.line, NULL);
+	ASTNode* loop = newASTForLoop(t.line, NULL);
 	loop->loop.line = t.line;
 	if((tokens->tokens->type != LC_BRACKET_TOKEN)&&(tokens->tokens->type != LS_BRACKET_TOKEN)){
 		//split(parser, tokens, 0);
@@ -900,133 +382,8 @@ void parse(Parser* parser, TokenArray* tokens){
 	tokens->tokens = tokens2;
 }
 
-void freeASTNode(ASTNode* node, bool typeFreeing){
-	ASTNodeType type = node->type;
-	switch(node->type){
-		case ASTBinaryOP_NODE_TYPE :{
-			freeASTNode(node->binaryOP.lhs, typeFreeing);
-			freeASTNode(node->binaryOP.rhs, typeFreeing);
-			free(node->binaryOP.lhs);
-			free(node->binaryOP.rhs);
-			if(typeFreeing) freeType(node->binaryOP.t);
-			break;
-		}
-		case ASTString_NODE_TYPE:{
-			if(typeFreeing) freeType(node->str.t);
-			break;
-		}
-		case ASTUnaryOP_NODE_TYPE : {
-			freeASTNode(node->unaryOP.opperand, typeFreeing);
-			free(node->unaryOP.opperand);
-			if(typeFreeing) freeType(node->unaryOP.t);
-			break;
-		}
-		case ASTCallOP_NODE_TYPE:{
-			freeASTNode(node->callOP.opperand, typeFreeing);
-			free(node->callOP.opperand);
-			if(typeFreeing) freeType(node->callOP.t);
-			break;
-		}
-		case ASTID_NODE_TYPE:{
-			if(typeFreeing) freeType(node->id.t);
-			break;
-		}
-		case ASTValue_NODE_TYPE:{
-			if(typeFreeing) freeType(node->value.t);
-			break;
-		}
-		case ASTExpression_NODE_TYPE:{
-			freeASTNode(node->expr.expr, typeFreeing);
-			free(node->expr.expr);
-			if(typeFreeing) freeType(node->expr.t);
-			break;
-		}
-		case ASTPrint_NODE_TYPE:{
-			freeASTNode(node->print.expr, typeFreeing);
-			free(node->print.expr);
-			if(typeFreeing) freeType(node->print.t);
-			break;
-		}
-		case ASTBlock_NODE_TYPE:{
-			for(long i = 0; i < node->block.numberOfNodes; i++)	freeASTNode(&node->block.nodes[i], typeFreeing);
-			if(typeFreeing) freeType(node->block.t);
-			break;
-		}
-		case ASTVariable_NODE_TYPE:{
-			freeASTNode(node->var.expr, typeFreeing);
-			free(node->var.expr);
-			if(typeFreeing) freeType(node->var.t);
-			break;
-		}
-		case ASTAssignment_NODE_TYPE:{
-			freeASTNode(node->ass.expr, typeFreeing);
-			free(node->ass.expr);
-			if(typeFreeing) freeType(node->ass.t);
-			break;			
-		}
-		case ASTForLoop_NODE_TYPE:{
-			if(node->loop.n1 != NULL) {
-				freeASTNode(node->loop.n1, typeFreeing);
-				free(node->loop.n1);
-			}
-			if(node->loop.n2 != NULL){
-				freeASTNode(node->loop.n2, typeFreeing);
-				free(node->loop.n2);
-			}
-			if(node->loop.n3 != NULL) {
-				freeASTNode(node->loop.n3, typeFreeing);
-				free(node->loop.n3);
-			}
-			if(node->loop.max != NULL) {
-				freeASTNode(node->loop.min, typeFreeing);
-				free(node->loop.min);
-			}
-			if(node->loop.max != NULL) {
-				freeASTNode(node->loop.max, typeFreeing);
-			}
-			freeASTNode(node->loop.b, typeFreeing);
-			if(typeFreeing) freeType(node->loop.t);
-			break;
-		}
-		case ASTIf_NODE_TYPE:{
-			freeASTNode(node->ifS.expr, typeFreeing);
-			free(node->ifS.expr);
-			freeASTNode(node->ifS.s, typeFreeing);
-			free(node->ifS.s);
-			if(node->ifS.elseS != NULL){
-				freeASTNode(node->ifS.elseS, typeFreeing);
-				free(node->ifS.elseS);
-			}
-			if(typeFreeing) freeType(node->ifS.t);
-			break;
-		}
-		case ASTElse_NODE_TYPE:{
-			freeASTNode(node->elseS.s, typeFreeing);
-			free(node->elseS.s);
-			if(typeFreeing) freeType(node->elseS.t);
-			break;
-		}
-		case ASTLoop_NODE_TYPE:{
-			freeASTNode(node->simpleLoop.expr, typeFreeing);
-			free(node->simpleLoop.expr);
-			freeASTNode(node->simpleLoop.block, typeFreeing);
-			free(node->simpleLoop.block);
-			if(typeFreeing) freeType(node->simpleLoop.t);
-			break;
-		}
-		default : {
-			printf("Cannot free node of given type"); 
-			printf("%d", type);
-			exit(1);
-		}
-	}
-	//free(node);
-}
 
-void freeAST(AST* ast, bool freeType){
-	for(long i = 0; i < ast->numberOfNodes; i++) freeASTNode(&ast->nodes[i], freeType);
-	free(ast);
-}
+
 
 void freeParser(Parser* parser){
 	freeAST(parser->ast, true);

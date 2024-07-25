@@ -245,7 +245,7 @@ ASTNode* rewriteLoopType2(Rewriter* rewriter,ASTNode* loop){
 
 ASTNode* rewriteLoopType3(Rewriter* rewriter, ASTNode* loop){
 	//for expr { ... } -> { let id = expr; for 0 < id { ... id = id + 1;} }
-	ASTNode* b = newBlock();
+	ASTNode* b = newASTBlock(-1, NULL);
 	
 	//Build zero expression
 	ASTNode* zero = (ASTNode*)malloc(sizeof(ASTValue));
@@ -300,7 +300,7 @@ ASTNode* rewriteLoopType3(Rewriter* rewriter, ASTNode* loop){
 
 ASTNode* rewriteLoopType4(Rewriter* rewriter, ASTNode* loop){
 	//for(s1; s2; s3;){...} -> {s1; for s2 {...; s3;} }
-	ASTNode* b = newBlock();
+	ASTNode* b = newASTBlock(-1, NULL);
 	ASTNode* x = rewriteNode(rewriter, loop->loop.n1);
 	emitNodeToBlock(x, b);
 	if(x->type = ASTVariable_NODE_TYPE) b->block.variableCount++;

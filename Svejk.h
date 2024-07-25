@@ -12,6 +12,8 @@
 #include "Table.h"
 #include "Analyzer.h"
 #include "Rewriting.h"
+#include "ASTObject.h"
+
 int main();
 
 #endif

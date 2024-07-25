@@ -8,7 +8,6 @@
 #include "Common.h"
 #include "RedBlackTree.h"
 
-
 typedef struct TypeTreeNode TypeTreeNode;
 
 struct TypeTreeNode{

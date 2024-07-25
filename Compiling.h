@@ -6,6 +6,7 @@
 #include "Parsing.h"
 #include "ScopeChain.h"
 #include "Analyzer.h"
+#include "ASTObject.h"
 
 typedef struct {
 	OPCode* ops;

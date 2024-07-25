@@ -89,6 +89,7 @@ TODO:
 		Add annotations and add them to ast objects
 
 	Cleaning and Behind the Scenes:
+		Make an Error ASTNode
 		Clean up errors
 		New ast object methods/initialization methods
 		Clean up rewriter, parser, analyzer 

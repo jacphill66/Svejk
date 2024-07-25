@@ -3,6 +3,7 @@
 
 #include "Parsing.h"
 #include "Analyzer.h"
+#include "ASTObject.h"
 
 typedef struct{
 	char* str;
