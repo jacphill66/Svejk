@@ -246,7 +246,7 @@ ASTNode* newASTForLoop(long line, Type* t){
 	return n;
 }
 
-ASTNode* newASTElse(ASTNode* s, ASTNode* b, long line, Type* t){
+ASTNode* newASTElse(ASTNode* s, long line, Type* t){
 	ASTNode* n = newASTNode();
 	n->type = ASTElse_NODE_TYPE;
 	n->elseS.s = s;
@@ -258,8 +258,9 @@ ASTNode* newASTElse(ASTNode* s, ASTNode* b, long line, Type* t){
 ASTNode* newASTIf(ASTNode* expr, ASTNode* s, ASTNode* elseS, long line, Type* t){
 	ASTNode* n = newASTNode();
 	n->type = ASTIf_NODE_TYPE;
-	n->ifS.expr = s;
+	n->ifS.expr = expr;
 	n->ifS.s = s;
+	n->ifS.elseS = elseS;
 	n->ifS.line = line;
 	n->ifS.t = t;
 	return n;

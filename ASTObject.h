@@ -176,7 +176,7 @@ ASTNode* newASTAssignment(char* id, ASTNode* expr, long line, Type* t);
 ASTNode* newASTVariable(char* id, ASTNode* expr, Type* type, long line, Type* t);
 ASTNode* newASTPrint(ASTNode* expr, long line, Type* t);
 ASTNode* newASTString(char* str, long line, Type* t);
-ASTNode* newASTElse(ASTNode* s, ASTNode* b, long line, Type* t);
+ASTNode* newASTElse(ASTNode* s, long line, Type* t);
 ASTNode* newASTIf(ASTNode* expr, ASTNode* s, ASTNode* elseS, long line, Type* t);
 
 ASTNode* newASTBlock(long line, Type* t);

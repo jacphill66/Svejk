@@ -1,8 +1,5 @@
 #include "Rewriting.h"
 
-//Line number is deprecated and can't realistically be restored 
-//Type is deprecated but can be restored
-
 void append(String* str, char chr){
 	if(str->length+2 > str->size){
 		str->str = realloc(str->str, str->size*2);
@@ -51,7 +48,7 @@ void emitVariable(VariableTable* t, char* id){
 }
 
 String* addNextLetter(String* str, char c){
-	//I know char is A-Z, _, 0-9, a-z
+	//a char is A-Z, _, 0-9, a-z
 	if((c != 'Z') && (c != '9') && (c != '_') && (c != 'z')) append(str, c+1);
 	else append(str, 'A');
 	return str;
@@ -64,14 +61,6 @@ String* uniqueID(VariableTable* t){
 	str->str[0] = '\0';
 	str->size = 1;
 	str->length = 0;
-	
-	/*
-	Algorithm:
-		if the current pos is less than the current string, add a new letter
-		if the pos == length-1, strings are same length, compare them
-			- if they are the same add a letter
-			- if they are different, move on to the next id
-	*/
 	for(int i = 0; i < t->count; i++){
 		if(t->variables[i]->length > pos){
 			addNextLetter(str, t->variables[i]->str[pos]);
@@ -96,78 +85,36 @@ String* uniqueID(VariableTable* t){
 }
 
 ASTNode* uniqueVariable(VariableTable* t, ASTNode* expr){
-	ASTNode* n = (ASTNode*)malloc(sizeof(ASTNode));
-	ASTVariable var;
-	var.id = uniqueID(t)->str;
-	//printf("%s\n", var.id);
-	var.expr = expr;
-	var.type = NULL;
-	n->var = var;
-	emitVariable(t, var.id);
-	return n;
+	ASTNode* var = newASTVariable(uniqueID(t)->str, expr, NULL, expr->expr.line, NULL);
+	emitVariable(t, var->var.id);
+	return var;
 }
 
 ASTNode* addMinAndMax(Rewriter* rewriter,ASTNode* loop){
 	//later...
 }
 
-
-
 ASTNode* rewritePrint(Rewriter* rewriter, ASTNode* n){
-	ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
-	ASTPrint p;
-	p.expr = rewriteNode(rewriter, n->print.expr);
-	node->print = p;
-	node->type = ASTPrint_NODE_TYPE;
-	return node;
+	return newASTPrint(rewriteNode(rewriter, n->print.expr), n->print.line, NULL);
 }
 
 ASTNode* rewriteExpression(Rewriter* rewriter, ASTNode* n){
-	ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
-	ASTExpression e;
-	e.expr = rewriteNode(rewriter, n->expr.expr);
-	node->expr = e;
-	node->type = ASTExpression_NODE_TYPE;
-	return node;
+	return newASTExpression(rewriteNode(rewriter, n->expr.expr), n->expr.line, NULL);
 }
 
 ASTNode* rewriteBinaryOP(Rewriter* rewriter, ASTNode* n){
-	ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
-	ASTBinaryOP op;
-	op.lhs = rewriteNode(rewriter, n->binaryOP.lhs);
-	op.rhs = rewriteNode(rewriter, n->binaryOP.rhs);
-	op.op = n->binaryOP.op;
-	node->binaryOP = op;
-	node->type = ASTBinaryOP_NODE_TYPE;
-	return node;
+	return newASTBinaryOP(rewriteNode(rewriter, n->binaryOP.lhs), n->binaryOP.op, rewriteNode(rewriter, n->binaryOP.rhs), n->binaryOP.line, NULL);
 }
 
 ASTNode* rewriteUnaryOP(Rewriter* rewriter, ASTNode* n){
-	ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
-	ASTUnaryOP op;
-	op.op = n->unaryOP.op;
-	op.opperand = rewriteNode(rewriter, n->unaryOP.opperand);
-	node->unaryOP = op;
-	node->type = ASTUnaryOP_NODE_TYPE;
-	return node;
+	return newASTUnaryOP(rewriteNode(rewriter, n->unaryOP.opperand), n->unaryOP.op, n->unaryOP.line, NULL);;
 }
 ASTNode* rewriteID(Rewriter* rewriter, ASTNode* n){
-	ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
-	ASTID id;
-	id.id = n->id.id;
-	node->id = id;
-	node->type = ASTID_NODE_TYPE;
-	return node;
+	return newASTID(n->id.id, n->id.line, NULL);
 }
 
 ASTNode* rewriteAssignment(Rewriter* rewriter, ASTNode* n){
-	ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
-	ASTAssignment ass;
-	ass.id = n->ass.id;
-	ass.expr = rewriteNode(rewriter, n->ass.expr);
-	node->ass = ass;
-	node->type = ASTAssignment_NODE_TYPE;
-	return node;
+	return newASTAssignment(n->ass.id, rewriteNode(rewriter, n->ass.expr), n->ass.line, NULL);
 }
 
 ASTNode* rewriteString(Rewriter* rewriter, ASTNode* n){

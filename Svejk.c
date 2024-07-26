@@ -13,7 +13,7 @@ int main(){
 	char* inferenceTest = "tests/Inference Test.txt";
 	char* forTest = "tests/for Test.txt";
 	char* ifTest = "tests/If Test.txt";
-	lex(tokens, ifTest);
+	lex(tokens, localVariableTest);
 	printTokens(tokens);
 	Parser* parser = newParser();
 	parse(parser, tokens);
@@ -89,10 +89,10 @@ TODO:
 		Add annotations and add them to ast objects
 
 	Cleaning and Behind the Scenes:
+		If statements should be in a local scopes, as should loops
 		Make an Error ASTNode
 		Clean up errors
-		New ast object methods/initialization methods
-		Clean up rewriter, parser, analyzer 
+		Clean up rewriter, analyzer 
 		Work on newlines and placement of: ;
 		Add line counter to rewriter 
 		Ensure all nodes can be analyzed

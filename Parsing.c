@@ -153,53 +153,43 @@ ASTNode* split(Parser* parser, TokenArray* tokens, int prec){
 }
 
 ASTNode* parseExpression(TokenArray* tokens, Parser* parser){
-	ASTExpression expr = {split(parser, tokens, 0), tokens->tokens->line};
-	ASTNode* n = malloc(sizeof(ASTNode));
-	n->type = ASTExpression_NODE_TYPE;
-	n->expr = expr;
-	return n;
+	return newASTExpression(split(parser, tokens, 0), tokens->tokens->line, NULL);
 }
 
 ASTNode* parsePrint(TokenArray* tokens, Parser* parser){
 	advance(tokens);
-	ASTNode* n = malloc(sizeof(ASTNode));
-	ASTPrint p = {split(parser, tokens, 0), tokens->tokens->line};
-	n->type = ASTPrint_NODE_TYPE;
-	n->print = p;
-	return n;
+	return newASTPrint(split(parser, tokens, 0), tokens->tokens->line, NULL);
+
 }
 
 ASTNode* parseLet(TokenArray* tokens, Parser* parser){
 	advance(tokens);
 	Token t = advance(tokens);
-	ASTNode* n = malloc(sizeof(ASTNode));
-	ASTVariable var;
-	var.line = t.line;
-	var.id = t.value;
-	int idSize = t.size;
+	char* id = t.value;
+	Type* type = NULL;
 	t = advance(tokens);
 	bool typed = false;
 	if(t.type == COLON_TOKEN){
 		t = advance(tokens);
 		switch (t.type){
 			case I32_TOKEN:{
-				var.type = newTrivialType(I32_TYPE);
+				type = newTrivialType(I32_TYPE);
 				break;
 			}
 			case F32_TOKEN:{
-				var.type = newTrivialType(F32_TYPE);
+				type = newTrivialType(F32_TYPE);
 				break;
 			}
 			case BOOL_TOKEN:{
-				var.type = newTrivialType(BOOL_TYPE);
+				type = newTrivialType(BOOL_TYPE);
 				break;
 			}
 			case STR_TOKEN:{
-				var.type = newTrivialType(STR_TYPE);
+				type = newTrivialType(STR_TYPE);
 				break;
 			}
 			default:{
-				var.type = NULL;
+				type = NULL;
 				printf("Invalid Type Anotation\n");
 				exit(1);
 			}
@@ -207,15 +197,13 @@ ASTNode* parseLet(TokenArray* tokens, Parser* parser){
 		typed = true;
 		advance(tokens);
 	}
-	ASTNode* expr = {split(parser, tokens, 0)};
-	var.expr = expr;
-	if(!typed) var.type = newTrivialType(INFERRED_TYPE);
-	n->type = ASTVariable_NODE_TYPE;
-	n->var = var;
-	return n;
+	ASTNode* var = newASTVariable(id, split(parser, tokens, 0), type, t.line, NULL);
+	if(!typed) var->var.type = newTrivialType(INFERRED_TYPE);
+	return var;
 }
 
 bool isAssignmentToken(TokenType t){
+	//later add: +=, -=, ...
 	switch(t){
 		case ASS_TOKEN:{
 			return true;
@@ -233,11 +221,7 @@ ASTNode* parseAssignment(TokenArray* tokens, Parser* parser){
 	char* id = t.value;
 	advance(tokens);
 	advance(tokens);
-	ASTNode* expr = split(parser, tokens, 0);
-	ASTAssignment ass = {id, expr, t.line};
-	node->ass = ass;
-	node->type = ASTAssignment_NODE_TYPE;
-	return node;
+	return newASTAssignment(id, split(parser, tokens, 0), t.line, NULL);
 }
 
 ASTNode* parseAssignmentOrReference(TokenArray* tokens, Parser* parser){
@@ -246,8 +230,7 @@ ASTNode* parseAssignmentOrReference(TokenArray* tokens, Parser* parser){
 }
 
 ASTNode* parseBlockExpression(TokenArray* tokens, Parser* parser){
-	Token t = advance(tokens);
-	ASTNode* b = newASTBlock(t.line, NULL);
+	ASTNode* b = newASTBlock(advance(tokens).line, NULL);
 	while(tokens->tokens->type != RC_BRACKET_TOKEN){
 		parseLocal(parser, b, tokens);
 	}
@@ -261,29 +244,17 @@ ASTNode* parseBlockOrTable(TokenArray* tokens, Parser* p){
 }
 
 ASTNode* parseElse(TokenArray* tokens, Parser* p){
-	ASTNode* elseS = (ASTNode*)malloc(sizeof(ASTNode));
-	elseS->type = ASTElse_NODE_TYPE;
 	Token t = advance(tokens);
-	elseS->elseS.line = t.line;
-	elseS->elseS.s = parseStatement(p, tokens, NULL);
-	return elseS;
+	return newASTElse(parseStatement(p, tokens, NULL), t.line, NULL);
 }
 
 ASTNode* parseIf(TokenArray* tokens, Parser* p){
-	ASTNode* ifS = (ASTNode*)malloc(sizeof(ASTNode));
-	ifS->type = ASTIf_NODE_TYPE;
 	Token t = advance(tokens);
-	ifS->ifS.line = t.line;
-	ifS->ifS.expr = split(p, tokens, 0);
-	ifS->ifS.s = parseStatement(p, tokens, NULL);
+	ASTNode* expr = split(p, tokens, 0);
+	ASTNode* s = parseStatement(p, tokens, NULL);
 	if(tokens->tokens->type == END_LINE_TOKEN) advance(tokens);
-	if(tokens->tokens->type == ELSE_TOKEN){
-		ifS->ifS.elseS = parseElse(tokens, p);
-	}
-	else {
-		ifS->ifS.elseS = NULL;
-	}
-	return ifS;
+	if(tokens->tokens->type == ELSE_TOKEN) return newASTIf(expr, s, parseElse(tokens, p), t.line, NULL);
+	else return newASTIf(expr, s, NULL, t.line, NULL);
 }
 
 ASTNode* parseFor(TokenArray* tokens, Parser* parser){
@@ -292,13 +263,8 @@ ASTNode* parseFor(TokenArray* tokens, Parser* parser){
 	ASTNode* loop = newASTForLoop(t.line, NULL);
 	loop->loop.line = t.line;
 	if((tokens->tokens->type != LC_BRACKET_TOKEN)&&(tokens->tokens->type != LS_BRACKET_TOKEN)){
-		//split(parser, tokens, 0);
 		loop->loop.n1 = parseStatement(parser, tokens, b);
-		if(tokens->tokens->type == IN_TOKEN){
-			advance(tokens);
-			ASTNode* expr = parseExpression(tokens, parser);
-			loop->loop.n2 = expr;
-		}
+		if(tokens->tokens->type == IN_TOKEN){}
 		else if((tokens->tokens->type != LS_BRACKET_TOKEN)&&(tokens->tokens->type != LC_BRACKET_TOKEN)){
 			advance(tokens);
 			loop->loop.n2 = parseStatement(parser, tokens, b);
@@ -332,27 +298,13 @@ ASTNode* parseStatement(Parser* parser, TokenArray* tokens, ASTNode* b){
 		case PLUS_OP_TOKEN :
 		case SUB_OP_TOKEN :
 		case LPAREN_OP_TOKEN :
-		case NOT_OP_TOKEN : {
-			return parseExpression(tokens, parser);
-		}
-		case ID_TOKEN:{
-			return parseAssignmentOrReference(tokens, parser);
-		}
-		case LC_BRACKET_TOKEN:{
-			return parseBlockOrTable(tokens, parser);
-		}
-		case PRINT_TOKEN:{
-			return parsePrint(tokens, parser);
-		}
-		case FOR_TOKEN:{
-			return parseFor(tokens, parser);
-		}
-		case LET_TOKEN:{
-			return parseLet(tokens, parser);
-		}
-		case IF_TOKEN:{
-			return parseIf(tokens, parser);
-		}
+		case NOT_OP_TOKEN : return parseExpression(tokens, parser);
+		case ID_TOKEN: return parseAssignmentOrReference(tokens, parser);
+		case LC_BRACKET_TOKEN: return parseBlockOrTable(tokens, parser);
+		case PRINT_TOKEN: return parsePrint(tokens, parser);
+		case FOR_TOKEN:	return parseFor(tokens, parser);
+		case LET_TOKEN:	return parseLet(tokens, parser);
+		case IF_TOKEN: return parseIf(tokens, parser);
 		default:{
 			printf("Unparsable token\n");
 			printf("%d", tokens->tokens->type);
@@ -381,9 +333,6 @@ void parse(Parser* parser, TokenArray* tokens){
 	}
 	tokens->tokens = tokens2;
 }
-
-
-
 
 void freeParser(Parser* parser){
 	freeAST(parser->ast, true);
