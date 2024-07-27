@@ -246,6 +246,16 @@ ASTNode* newASTForLoop(long line, Type* t){
 	return n;
 }
 
+ASTNode* newASTSimpleLoop(ASTNode* expr, ASTNode* block, long line, Type* t){
+	ASTNode* n = newASTNode();
+	n->type = ASTLoop_NODE_TYPE;
+	n->simpleLoop.expr = expr;
+	n->simpleLoop.block = block;
+	n->simpleLoop.line = line;
+	n->simpleLoop.t = t;
+	return n;
+}
+
 ASTNode* newASTElse(ASTNode* s, long line, Type* t){
 	ASTNode* n = newASTNode();
 	n->type = ASTElse_NODE_TYPE;

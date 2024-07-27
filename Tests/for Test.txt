@@ -1,32 +1,69 @@
-
-
-
-for let i:i32 = 1; i < 10; i = i + 1 {
+//Type1
+for let i = 0; i < 6; i = i + 1{
 	print i;
 }
 
-print 1;
-let x:i32 = 0;
-print not (x < 10);
+print "\n";
+
+for let i = 6; i > 0; i = i - 1{
+	print i;
+}
+
+print "\n";
+
+
+//Type 2
+let i = 1;
+for i < 10 {
+	print i;
+	i = i + 1;
+}
+
+print "\n";
+
+let y:bool = true;
+for y {
+	print "once";
+	y = not y;
+}
+
+
+for false {
+
+}
+
+print "\n";
+
+//Type 3
+for 5 {
+	print i;
+}
 
 for 10 {
 
 }
 
-for (x < 10) {
-	print x;
-	x = x + 1;
+print "\n";
+
+
+for 1 {
+	for 1 { 
+		for 1 { 
+			for 1 { 
+				for 1 { 
+					for 1 { 
+			print "once"; 
+} } } } } }
+
+for 10000 {
+
+
 }
 
-print 2;
+print "\n";
 
-for 5 {
-	print 10;
-}
 
-for 100000000{
-	//print "What are you doing, Hal?";
-}
-print "done";
+print "infinite loop";
 
-for {}
+//Type4
+for { }

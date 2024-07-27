@@ -7,16 +7,28 @@ print "here";
 let x:i32 = 1;
 
 
-if true {
+if 1==2 {
 	print "here1";
-} else if false {
+} else if 2==1 {
 	print "here2";
-} else if false {
+} else if "apples"=="oranges" {
 	print "here3";
-} else if false {
+} else if "oranges" == "oranges"{
 	print "here4";
 } else {
 	print "here5";
 } 
 
+print "Equality Tests:";
 
+print 1 == 1;
+print 1 == 2;
+
+print "pear" == "apple";
+print "oranges" == "oranges";
+
+print 1.2 == 1.2;
+print 1.22 == 1.2;
+
+print true == true;
+print false == true;

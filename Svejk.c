@@ -13,7 +13,7 @@ int main(){
 	char* inferenceTest = "tests/Inference Test.txt";
 	char* forTest = "tests/for Test.txt";
 	char* ifTest = "tests/If Test.txt";
-	lex(tokens, localVariableTest);
+	lex(tokens, forTest);
 	printTokens(tokens);
 	Parser* parser = newParser();
 	parse(parser, tokens);
@@ -60,7 +60,6 @@ TODO:
 			Add alpha type
 			Add assignment ops and desugar them
 			Add scripts
-			Add equality
 			Add more features to print
 
 		Functions:
@@ -87,18 +86,25 @@ TODO:
 		Add transpiler: transpiles it to various languages		
 		Add heap
 		Add annotations and add them to ast objects
+		Add var
 
 	Cleaning and Behind the Scenes:
 		If statements should be in a local scopes, as should loops
 		Make an Error ASTNode
 		Clean up errors
-		Clean up rewriter, analyzer 
-		Work on newlines and placement of: ;
-		Add line counter to rewriter 
+
 		Ensure all nodes can be analyzed
 		Work on the Type System and Language as a whole
 		In rewriter and analyzer, don't pass ast node, pass the specific type
 		Clean up freeing
 		For should just take a statement
 		Add rewriting to print (and other operators)
+*/
+
+/*
+	for loop should take one statement
+	if statement and loop should create a new scope
+	Clean up rewriter, analyzer 
+	Work on newlines and placement of: ;
+	Add line counter to rewriter 
 */

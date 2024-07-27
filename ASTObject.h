@@ -178,7 +178,7 @@ ASTNode* newASTPrint(ASTNode* expr, long line, Type* t);
 ASTNode* newASTString(char* str, long line, Type* t);
 ASTNode* newASTElse(ASTNode* s, long line, Type* t);
 ASTNode* newASTIf(ASTNode* expr, ASTNode* s, ASTNode* elseS, long line, Type* t);
-
+ASTNode* newASTSimpleLoop(ASTNode* expr, ASTNode* block, long line, Type* t);
 ASTNode* newASTBlock(long line, Type* t);
 ASTNode* newASTForLoop(long line, Type* t);
 
