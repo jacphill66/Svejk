@@ -58,6 +58,7 @@ typedef struct {
 	ASTNode* expr;
 	long line;
 	Type* t;
+	bool statement;
 }ASTExpression;
 
 typedef struct{
@@ -113,12 +114,22 @@ typedef struct{
 	Type* t;
 }ASTIf;
 
+typedef enum {
+	//1-4 * a-b
+	TABLE_1A,
+	TABLE_1B,
+	
+}TableType;
+
 typedef struct{
-	Value* initalElements;
+	ASTNode* nodes;
 	char** keys; 
-	int size;
+	TableType type;
+	int numberOfNodes;
 	int cappacity;
-}PrimStruct;
+	long line;
+	Type* t;
+}ASTTable;
 
 typedef enum{
 	ASTBinaryOP_NODE_TYPE,
@@ -136,6 +147,7 @@ typedef enum{
 	ASTLoop_NODE_TYPE,
 	ASTElse_NODE_TYPE,
 	ASTIf_NODE_TYPE,
+	ASTTable_NODE_TYPE,
 }ASTNodeType;
 
 struct ASTNode {
@@ -156,6 +168,7 @@ struct ASTNode {
 		ASTLoop simpleLoop;
 		ASTIf ifS;
 		ASTElse elseS;
+		ASTTable table;
 	};
 } ;
 
@@ -170,7 +183,7 @@ ASTNode* newASTNode();
 ASTNode* newASTBinaryOP(ASTNode* lhs, OPCode op, ASTNode* rhs, long line, Type* t);
 ASTNode* newASTUnaryOP(ASTNode* opperand, OPCode op, long line, Type* t);
 ASTNode* newASTValue(Value v, long line, Type* t);
-ASTNode* newASTExpression(ASTNode* expr, long line, Type* t);
+ASTNode* newASTExpression(ASTNode* expr, bool statement, long line, Type* t);
 ASTNode* newASTID(char* id, long line, Type* t);
 ASTNode* newASTAssignment(char* id, ASTNode* expr, long line, Type* t);
 ASTNode* newASTVariable(char* id, ASTNode* expr, Type* type, long line, Type* t);
@@ -182,6 +195,9 @@ ASTNode* newASTSimpleLoop(ASTNode* expr, ASTNode* block, long line, Type* t);
 ASTNode* newASTBlock(long line, Type* t);
 ASTNode* newASTForLoop(long line, Type* t);
 
+//Just parsing
+ASTNode* newASTTable(TableType type, int line, Type* t);
+
 void freeASTNode(ASTNode* node, bool freeType);
 void freeAST(AST* ast, bool freeType);
 
@@ -189,6 +205,7 @@ void printASTNode(AST* ast, ASTNode* node);
 void printAST(AST* ast);
 
 void emitNodeToBlock(ASTNode* node, ASTNode* b);
+void emitNodeToTable(char* key, ASTNode* node, ASTNode* t);
 void emitNode(ASTNode* node, AST* ast);
 
 #endif

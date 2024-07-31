@@ -99,7 +99,7 @@ ASTNode* rewritePrint(Rewriter* rewriter, ASTNode* n){
 }
 
 ASTNode* rewriteExpression(Rewriter* rewriter, ASTNode* n){
-	return newASTExpression(rewriteNode(rewriter, n->expr.expr), n->expr.line, NULL);
+	return newASTExpression(rewriteNode(rewriter, n->expr.expr), n->expr.statement, n->expr.line, NULL);
 }
 
 ASTNode* rewriteBinaryOP(Rewriter* rewriter, ASTNode* n){
@@ -135,7 +135,6 @@ ASTNode* rewriteBlock(Rewriter* rewriter, ASTNode* n){
 	ASTNode* b = newASTBlock(n->block.line, n->block.t);
 	for(int i = 0; i < n->block.numberOfNodes; i++) {
 		ASTNode* n2 = rewriteNode(rewriter, &n->block.nodes[i]);
-		if(n2->type == ASTVariable_NODE_TYPE) b->block.variableCount++;
 		emitNodeToBlock(n2, b);
 	}
 	return b;
@@ -157,7 +156,6 @@ ASTNode* rewriteLoopType3(Rewriter* rewriter, ASTNode* loop){
 	ASTNode* var = uniqueVariable(rewriter->table, newASTValue(newI32(0), line, NULL));
 	emitNodeToBlock(var, b);
 	ASTNode* refToVar = newASTID(var->var.id, line+1, NULL);	
-	b->block.variableCount++;
 	ASTNode* newLoop = newASTSimpleLoop(newASTBinaryOP(refToVar, LESS_OP, rewriteNode(rewriter, loop->loop.n1)->expr.expr, line+1, NULL), rewriteNode(rewriter, loop->loop.b), line+1, NULL);
 	int newLine = newLoop->simpleLoop.block->block.numberOfNodes+1;
 	ASTNode* inc = newASTAssignment(var->var.id, newASTBinaryOP(newASTID(var->var.id, newLine, NULL), PLUS_OP, newASTValue(newI32(1), newLine, NULL), newLine, NULL), newLine, NULL);

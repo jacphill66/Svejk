@@ -162,10 +162,11 @@ ASTNode* newASTValue(Value v, long line, Type* t){
 	return n;
 }
 
-ASTNode* newASTExpression(ASTNode* expr, long line, Type* t){
+ASTNode* newASTExpression(ASTNode* expr, bool statement, long line, Type* t){
 	ASTNode* n = newASTNode();
 	n->type = ASTExpression_NODE_TYPE;
 	n->expr.expr = expr;
+	n->expr.statement = statement;
 	n->expr.line = line;
 	n->expr.t = t;
 	return n;
@@ -276,6 +277,19 @@ ASTNode* newASTIf(ASTNode* expr, ASTNode* s, ASTNode* elseS, long line, Type* t)
 	return n;
 }
 
+ASTNode* newASTTable(TableType type, int line, Type* t){
+	ASTNode* n = newASTNode();
+	n->type = ASTTable_NODE_TYPE;
+	n->table.nodes = (ASTNode*)malloc(sizeof(ASTNode));
+	n->table.keys = (char**) malloc(sizeof(char*));
+	n->table.type = type;
+	n->table.cappacity = 1;
+	n->table.numberOfNodes = 0;
+	n->table.line = line;
+	n->table.t = t;
+	return n;
+}
+
 ASTNode* resizeNodes(ASTNode* nodes, long cappacity){
 	ASTNode* newNodes = (ASTNode*)realloc(nodes, 2*cappacity*sizeof(ASTNode));
 	if(newNodes == NULL){
@@ -298,10 +312,33 @@ void emitNode(ASTNode* node, AST* ast){
 void emitNodeToBlock(ASTNode* node, ASTNode* b){
 	b->block.nodes[b->block.numberOfNodes] = *node;
 	b->block.numberOfNodes++;
+	if(node != NULL && node->type == ASTVariable_NODE_TYPE) b->block.variableCount++;
 	if(b->block.numberOfNodes == b->block.cappacity){
 		b->block.nodes = resizeNodes(b->block.nodes, b->block.cappacity);
 		b->block.cappacity *= 2;
 	}
+}
+
+char** resizeKeys(char** keys, long cappacity){
+	char** newKeys = (char**)realloc(keys, 2*cappacity*sizeof(char*));
+	if(newKeys == NULL){
+		printf("could not resize AST-Nodes!\n");
+		free(keys);
+		exit(1);
+	}
+	return newKeys;
+}
+
+void emitNodeToTable(char* key, ASTNode* node, ASTNode* t){
+	t->table.nodes[t->table.numberOfNodes] = *node;
+	if(key != NULL) t->table.keys[t->table.numberOfNodes] = key;
+	t->table.numberOfNodes++;
+	if(t->table.numberOfNodes == t->table.cappacity){
+		t->table.nodes = resizeNodes(t->table.nodes, t->table.cappacity);
+		if(key != NULL) t->table.keys = resizeKeys(t->table.keys, t->table.cappacity);
+		t->table.cappacity *= 2;
+	}
+
 }
 
 void printOP(OPCode op){
@@ -548,6 +585,15 @@ void printASTNode(AST* ast, ASTNode* node){
 		case ASTElse_NODE_TYPE:{
 			printf("else ");
 			printASTNode(ast, node->elseS.s);
+			break;
+		}
+		case ASTTable_NODE_TYPE:{
+			printf("Table-%d[", node->table.type);
+			for(int i = 0; i < node->table.numberOfNodes; i++) {
+				printASTNode(ast, &node->table.nodes[i]);
+				printf(",");
+			}
+			printf("]");
 			break;
 		}
 		default : {

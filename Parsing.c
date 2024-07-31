@@ -6,6 +6,14 @@ Token advance(TokenArray* tokens){
 	return token;
 }
 
+TokenType currentType(TokenArray* tokens){
+	return tokens->tokens->type;
+}
+
+Token currentToken(TokenArray* tokens){
+	return *tokens->tokens;
+}
+
 Token peek(TokenArray* tokens){
 	Token token = *(tokens->tokens+1);
 	return token;
@@ -90,6 +98,10 @@ ASTNode* literal(Parser* parser, Token t){
 		case TRUE_VAL_TOKEN: return newASTValue(newBool(true), t.line, NULL);
 		case FALSE_VAL_TOKEN: return newASTValue(newBool(false), t.line, NULL);
 		case ID_TOKEN: return newASTID(t.value, t.line, NULL);
+		default:{
+			printf("Invalid Literal Start\n");
+			exit(1);
+		}
 	}
 }
 
@@ -104,6 +116,7 @@ ASTNode* prefix(Parser* parser, TokenArray* tokens){
 		case PLUS_OP_TOKEN: return newASTUnaryOP(split(parser, tokens, getPrefixPrec(t.type)+1), UNARY_PLUS_OP, t.line, NULL);
 		case SUB_OP_TOKEN: return newASTUnaryOP(split(parser, tokens, getPrefixPrec(t.type)+1), UNARY_MINUS_OP, t.line, NULL);
 		case NOT_OP_TOKEN: return newASTUnaryOP(split(parser, tokens, getPrefixPrec(t.type)+1), NOT_OP, t.line, NULL);
+		case LC_BRACKET_TOKEN: return parseBlockOrTable(tokens, parser);
 		default: return literal(parser, t);
 	}
 }
@@ -153,7 +166,9 @@ ASTNode* split(Parser* parser, TokenArray* tokens, int prec){
 }
 
 ASTNode* parseExpression(TokenArray* tokens, Parser* parser){
-	return newASTExpression(split(parser, tokens, 0), tokens->tokens->line, NULL);
+	bool statement = false;
+	if(currentToken(tokens).type == END_LINE_TOKEN) statement = true;
+	return newASTExpression(split(parser, tokens, 0), statement, tokens->tokens->line, NULL);
 }
 
 ASTNode* parsePrint(TokenArray* tokens, Parser* parser){
@@ -229,29 +244,15 @@ ASTNode* parseAssignmentOrReference(TokenArray* tokens, Parser* parser){
 	return parseExpression(tokens, parser);
 }
 
-ASTNode* parseBlockExpression(TokenArray* tokens, Parser* parser){
-	ASTNode* b = newASTBlock(advance(tokens).line, NULL);
-	while(tokens->tokens->type != RC_BRACKET_TOKEN){
-		parseLocal(parser, b, tokens);
-	}
-	advance(tokens);
-	return b;
-}
-
-ASTNode* parseBlockOrTable(TokenArray* tokens, Parser* p){
-	//parse a statement. if it is an expression, extract it, parse a dictionary
-	return parseBlockExpression(tokens, p);
-}
-
 ASTNode* parseElse(TokenArray* tokens, Parser* p){
 	Token t = advance(tokens);
-	return newASTElse(parseStatement(p, tokens, NULL), t.line, NULL);
+	return newASTElse(parseStatement(p, tokens), t.line, NULL);
 }
 
 ASTNode* parseIf(TokenArray* tokens, Parser* p){
 	Token t = advance(tokens);
 	ASTNode* expr = split(p, tokens, 0);
-	ASTNode* s = parseStatement(p, tokens, NULL);
+	ASTNode* s = parseStatement(p, tokens);
 	if(tokens->tokens->type == END_LINE_TOKEN) advance(tokens);
 	if(tokens->tokens->type == ELSE_TOKEN) return newASTIf(expr, s, parseElse(tokens, p), t.line, NULL);
 	else return newASTIf(expr, s, NULL, t.line, NULL);
@@ -263,13 +264,13 @@ ASTNode* parseFor(TokenArray* tokens, Parser* parser){
 	ASTNode* loop = newASTForLoop(t.line, NULL);
 	loop->loop.line = t.line;
 	if((tokens->tokens->type != LC_BRACKET_TOKEN)&&(tokens->tokens->type != LS_BRACKET_TOKEN)){
-		loop->loop.n1 = parseStatement(parser, tokens, b);
+		loop->loop.n1 = parseStatement(parser, tokens);
 		if(tokens->tokens->type == IN_TOKEN){}
 		else if((tokens->tokens->type != LS_BRACKET_TOKEN)&&(tokens->tokens->type != LC_BRACKET_TOKEN)){
 			advance(tokens);
-			loop->loop.n2 = parseStatement(parser, tokens, b);
+			loop->loop.n2 = parseStatement(parser, tokens);
 			advance(tokens);
-			loop->loop.n3 = parseStatement(parser, tokens, b);
+			loop->loop.n3 = parseStatement(parser, tokens);
 		}
 	}
 	if(tokens->tokens->type == LS_BRACKET_TOKEN){
@@ -288,7 +289,52 @@ ASTNode* parseFor(TokenArray* tokens, Parser* parser){
 	return loop;
 }
 
-ASTNode* parseStatement(Parser* parser, TokenArray* tokens, ASTNode* b){
+ASTNode* parseBlockExpression(TokenArray* tokens, Parser* parser, ASTNode* s){
+	ASTNode* b = newASTBlock(tokens->tokens->line, NULL);
+	if(s!=NULL) emitNodeToBlock(s, b);
+	while(tokens->tokens->type != RC_BRACKET_TOKEN){
+		parseLocal(parser, b, tokens);
+	}
+	advance(tokens);
+	return b;
+}
+
+ASTNode* parseBlockOrTable(TokenArray* tokens, Parser* p){
+	ASTNode* s = NULL;
+	if(tokens->tokens->type != RC_BRACKET_TOKEN) s = parseStatement(p, tokens);
+	if(tokens->tokens->type == END_LINE_TOKEN || (s!=NULL && (s->type != ASTExpression_NODE_TYPE || (s->type == ASTExpression_NODE_TYPE && s->expr.statement)))){
+		if(currentToken(tokens).type == END_LINE_TOKEN) advance(tokens);
+		ASTNode* b = newASTBlock(tokens->tokens->line, NULL);
+		if(s != NULL) emitNodeToBlock(s, b);
+		while(tokens->tokens->type != RC_BRACKET_TOKEN){
+			parseLocal(p, b, tokens);
+		}
+		advance(tokens);
+		return b;
+	}
+	else{
+		ASTNode* table = newASTTable(TABLE_1A, tokens->tokens->line, NULL);
+		if(s != NULL) emitNodeToTable(NULL, s->expr.expr, table);
+		free(s);//might need to free stuff in rewritter.
+		advance(tokens);//maybe advance
+		while(tokens->tokens->type != RC_BRACKET_TOKEN){
+			emitNodeToTable(NULL, split(p, tokens, 0), table);
+			advance(tokens);//maybe advance
+		}
+		advance(tokens);
+		return table;
+	}
+}
+
+ASTNode* parseExpressionOrTuple(TokenArray* tokens, Parser* p){
+	return parseExpression(tokens, p);
+}
+
+ASTNode* parseArray(TokenArray* tokens, Parser* p){
+	return NULL;
+}
+
+ASTNode* parseStatement(Parser* parser, TokenArray* tokens){
 	switch(tokens->tokens->type){
 		case I32_VAL_TOKEN : 
 		case F32_VAL_TOKEN :
@@ -297,10 +343,11 @@ ASTNode* parseStatement(Parser* parser, TokenArray* tokens, ASTNode* b){
 		case FALSE_VAL_TOKEN :
 		case PLUS_OP_TOKEN :
 		case SUB_OP_TOKEN :
+		case NOT_OP_TOKEN : 
 		case LPAREN_OP_TOKEN :
-		case NOT_OP_TOKEN : return parseExpression(tokens, parser);
+		case LC_BRACKET_TOKEN: 
+		case LS_BRACKET_TOKEN : return parseExpression(tokens, parser);
 		case ID_TOKEN: return parseAssignmentOrReference(tokens, parser);
-		case LC_BRACKET_TOKEN: return parseBlockOrTable(tokens, parser);
 		case PRINT_TOKEN: return parsePrint(tokens, parser);
 		case FOR_TOKEN:	return parseFor(tokens, parser);
 		case LET_TOKEN:	return parseLet(tokens, parser);
@@ -319,7 +366,7 @@ void parseLocal(Parser* parser, ASTNode* b, TokenArray* tokens){
 		advance(tokens);
 		return;
 	}
-	emitNodeToBlock(parseStatement(parser, tokens, b), b);
+	emitNodeToBlock(parseStatement(parser, tokens), b);
 }
 
 void parse(Parser* parser, TokenArray* tokens){
@@ -329,7 +376,7 @@ void parse(Parser* parser, TokenArray* tokens){
 			advance(tokens); 
 			continue;
 		}
-		emitNode(parseStatement(parser, tokens, NULL), parser->ast);
+		emitNode(parseStatement(parser, tokens), parser->ast);
 	}
 	tokens->tokens = tokens2;
 }

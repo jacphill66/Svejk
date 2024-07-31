@@ -1,24 +1,39 @@
 #include "Svejk.h"
 #include "TypeMap.h"
 
+/*
+Right now:
+	1.) modify analyzer and rewriter to work with changes, before I premptivley add parser features
+	2.) have more consistent newline checking
+	2.) for and if-else should just take one statement each
+	2.) add operators: <<, !, expr[i], 
+	3.) add index assignment: expr[i] =
+	4.) add type parsing method and add
+	5.) add other types of tables
+	6.) fix analyzer to ensure the last statement of a block is a value 
+*/
+
+
 int main(){
 	
 	TokenArray* tokens = initTokenArray(tokens);
 	char* arithmeticTest = "tests/Arithmetic Test.txt";
 	char* stringTest = "tests/string Test.txt";
 	char* globalVariableTest = "tests/Global Variables Test.txt";
-	char* localVariableTest = "tests/Local Variables Test.txt";
+	char* localVariableTest = "tests/Local Variables and Blocks test.txt";
 	char* variablesTest = "tests/Variables Test.txt";
 	char* errorTest = "tests/Errors Test.txt";
 	char* inferenceTest = "tests/Inference Test.txt";
 	char* forTest = "tests/for Test.txt";
 	char* ifTest = "tests/If Test.txt";
-	lex(tokens, forTest);
+	char* tableTest = "tests/Just Parsing/Table Test.txt";
+	lex(tokens, tableTest);
 	printTokens(tokens);
 	Parser* parser = newParser();
 	parse(parser, tokens);
 	freeTokens(tokens);
 	printAST(parser->ast);
+	exit(1);
 	Analyzer* analyzer = newAnalyzer();
 	analyze(analyzer, parser->ast);
 	printErrors(analyzer->a->errors);
@@ -102,6 +117,10 @@ TODO:
 */
 
 /*
+	should blocks be expressions? should procedures
+	Modify emit node to block to count variables
+	Finish parsing imperative tables
+	Add parsing error to parser
 	for loop should take one statement
 	if statement and loop should create a new scope
 	Clean up rewriter, analyzer 

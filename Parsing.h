@@ -20,8 +20,8 @@ ASTNode* split(Parser* parser, TokenArray* tokens, int prec);
 AST* newAST();
 
 Parser* newParser();
-
-ASTNode* parseStatement(Parser* parser, TokenArray* tokens, ASTNode* b);
+ASTNode* parseBlockOrTable(TokenArray* tokens, Parser* p);
+ASTNode* parseStatement(Parser* parser, TokenArray* tokens);
 void parseLocal(Parser* parser, ASTNode* b, TokenArray* tokens);
 void parse(Parser* parser, TokenArray* tokens);
 
