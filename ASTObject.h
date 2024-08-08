@@ -7,7 +7,7 @@ typedef struct ASTNode ASTNode;
 
 typedef struct{
 	ASTNode* lhs;
-	OPCode op;
+	char* op;
 	ASTNode* rhs;
 	long line;
 	Type* t;
@@ -180,7 +180,8 @@ typedef struct {
 
 ASTNode* newASTNode();
 
-ASTNode* newASTBinaryOP(ASTNode* lhs, OPCode op, ASTNode* rhs, long line, Type* t);
+ASTNode* newASTBinaryOP(ASTNode* lhs, char* op, ASTNode* rhs, long line, Type* t);
+
 ASTNode* newASTUnaryOP(ASTNode* opperand, OPCode op, long line, Type* t);
 ASTNode* newASTValue(Value v, long line, Type* t);
 ASTNode* newASTExpression(ASTNode* expr, bool statement, long line, Type* t);

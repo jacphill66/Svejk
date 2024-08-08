@@ -1,5 +1,144 @@
 #include "Lexing.h"
 
+
+TrieNode* newTrieNode(char c, bool validEnd){
+	TrieNode* n = (TrieNode*)malloc(sizeof(TrieNode));
+	n->letter = c;
+	n->validEnd = NULL;
+	n->next = NULL;
+	n->child = NULL;
+	return n;
+}
+
+Trie* newTrie(){
+	Trie* t = (Trie*)malloc(sizeof(Trie));
+	t->root = NULL;
+	return t;
+}
+
+TokenArray* initTokenArray(){
+	TokenArray* arr = (TokenArray*)malloc(sizeof(TokenArray));
+	arr->tokens = (Token*)malloc(sizeof(Token));
+	arr->trie = newTrie();
+	arr->cappacity = 1;
+	arr->tokenCount = 0;
+	return arr;
+}
+
+TrieNode* addRest(char* str, int index){
+	//if and when NULL is hit, this adds the rest of a string
+	TrieNode* n = newTrieNode(str[index], false);
+	int count = index+1;
+	TrieNode* t = n;
+	while(count < strlen(str)){
+		t->child = newTrieNode(str[count], false);
+		t = t->child;
+		count += 1;
+	}
+	t->validEnd = true;
+	return n;
+}
+
+void printDown(TrieNode* n){
+	while(n != NULL){
+		printf("%c, Next:", n->letter);
+		if(n->next == NULL) printf("NULL");
+		else printf("%c", n->next->letter);
+		printf(", Valid End: ");
+		if(n->validEnd) printf("True\n");
+		else printf("False\n");
+		//if(n->next != NULL) printf("Error!");
+		n = n->child;
+	}
+}
+
+bool searchForStringNode(TrieNode* n, char* str, int index){
+	if(n == NULL) return false;
+	else if((n->letter == str[index]) && (index == strlen(str)-1) && n->validEnd) return true;
+	else if(n->letter == str[index]) return searchForStringNode(n->child, str, index+1);
+	else if(n->next != NULL) return searchForStringNode(n->next, str, index);
+	else return false;
+}
+
+bool searchForString(Trie* t, char* str){
+	searchForStringNode(t->root->child, str, 0);
+}
+
+void printSearch(Trie* t, char* str){
+	if(searchForString(t, str)) printf("%s is contained in the trie!\n", str);
+	else printf("%s isn't contained in trie! Perhaps you should trie again.\n", str);
+}
+
+TrieNode* addStringNode(TrieNode* n, char* str, int index){	
+	if(index >= strlen(str)){
+		return n;
+	}
+	else if (n == NULL){
+		return addRest(str, index);
+	}
+	else if(n->letter > str[index]){
+		TrieNode* newNode = newTrieNode(str[index], false);
+		if(index+1 < strlen(str)) newNode->child = addRest(str, index+1);
+		else newNode->validEnd = true;
+		newNode->next = n;
+		return newNode;
+	}
+	else{
+		TrieNode* t = n;
+		while(t->next != NULL && t->next->letter <= str[index]) t = t->next;	
+		if(t->letter == str[index]){
+			t->child = addStringNode(t->child, str, index+1);
+			if(index+1 >= strlen(str)) t->validEnd = true;
+			return n;
+		}
+		else{
+			TrieNode* t2 = t->next;
+			t->next = newTrieNode(str[index], false);
+			if(index+1 < strlen(str)) t->next->child = addRest(str, index+1);
+			else t->next->validEnd = true;
+			t->next->next = t2;
+			return n;
+		}
+	}
+}
+
+void addString(Trie* t, char* str){
+	if(t->root == NULL){
+		t->root = (TrieNode*)malloc(sizeof(TrieNode));
+		t->root->letter = '\0';
+		t->root->validEnd = false;
+		t->root->next = NULL;
+		t->root->child = addRest(str, 0);
+	}
+	else t->root->child = addStringNode(t->root->child, str, 0);
+}
+
+void addToken(char** tokens, int tokenCount, const char* token){
+	tokens[tokenCount] = (char*)malloc(sizeof(char)*strlen(token));
+	for(int i = 0; i < strlen(token); i++) tokens[tokenCount][i] = token[i];
+}
+
+/*
+void trieNodePrintString(TrieNode* n){
+	//work on this...
+	printf("%c", n->letter);
+	TrieNode* t = n->child;
+	while(t != NULL && t->validEnd != true){
+		trieNodePrintString(t);
+		t = t->next;
+	}
+	t->validEnd = false;
+}
+
+void triePrintStrings(Trie* t){
+	trieNodePrintString(t->root->child);
+}
+
+void printTrie(Trie* trie){
+	
+}
+*/
+
 FILE* getFileToRead(const char* path){
 	FILE* file;
 	file = fopen(path, "r");
@@ -30,7 +169,6 @@ char* newBuffer(FILE* file, long fileSize){
 char* fillBuffer(FILE* file, long fileSize){
 	char * buffer = newBuffer(file, fileSize);
 	size_t bytesRead = fread(buffer, 1, fileSize, file);
-
 	if (bytesRead != fileSize) {
 		printf("Error reading the entire file.\n");
 		free(buffer);
@@ -43,176 +181,46 @@ char* fillBuffer(FILE* file, long fileSize){
 
 void printToken(Token* token){
 	switch(token->type){
-		case PLUS_OP_TOKEN:{
-			printf("+");
-			break;
-		}
-		case SUB_OP_TOKEN:{
-			printf("-");
-			break;
-		}
-		case MULT_OP_TOKEN:{
-			printf("*");
-			break;
-		}
-		case DIV_OP_TOKEN:{
-			printf("/");
-			break;
-		}
-		case REM_OP_TOKEN:{
-			printf("%c", '%');
-			break;
-		}
-		case EXP_OP_TOKEN:{
-			printf("^");
-			break;
-		}
-		case FACT_OP_TOKEN : {
-			printf("!");
-			break;
-		}
-		case EQUAL_OP_TOKEN:{
-			printf("==");
-			break;
-		}
-		case LESS_OP_TOKEN:{
-			printf("<");
+		case SYM_TOKEN:{
+			printf("SYMBOL[");
+			printf("%s", token->value);
+			printf("]");
 			break;
 		}	
-		case GREATER_OP_TOKEN:{
-			printf(">");
-			break;
-		}	
-		case LOE_OP_TOKEN:{
-			printf("<=");
-			break;
-		}
-		case GOE_OP_TOKEN:{
-			printf(">=");
-			break;
-		}				
-		case AND_OP_TOKEN:{
-			printf("and");
-			break;
-		}		
-		case OR_OP_TOKEN:{
-			printf("or");
-			break;
-		}	
-		case NOT_OP_TOKEN:{
-			printf("not");
-			break;
-		}	
-		case TRUE_VAL_TOKEN:{
-			printf("true");
-			break;		
-		}
-		case FALSE_VAL_TOKEN :{
-			printf("false");
-			break;
-		}
-		case STR_VAL_TOKEN :{
-			printf("string[");
+		case WORD_TOKEN: {
+			printf("WORD[");
 			printf("%s", token->value);
 			printf("]");
 			break;
 		}
-		case I32_VAL_TOKEN:{
-			printf("i32[");
+		case STR_A_TOKEN :{
+			printf("STRING[");
 			printf("%s", token->value);
 			printf("]");
 			break;
 		}
-		case F32_VAL_TOKEN:{
-			printf("f32[");
+		case INT_TOKEN:{
+			printf("I32[");
 			printf("%s", token->value);
 			printf("]");
 			break;
 		}
-		case ID_TOKEN: {
-			printf("ID[");
+		case FLOAT_TOKEN:{
+			printf("F32[");
 			printf("%s", token->value);
 			printf("]");
 			break;
 		}
-		case LPAREN_OP_TOKEN: {
-			printf("(");
-			break;
-		}
-		case RPAREN_OP_TOKEN: {
-			printf(")");
-			break;
-		}
-		case LC_BRACKET_TOKEN:{
-			printf("{");
-			break;
-		}
-		case RC_BRACKET_TOKEN:{
-			printf("}");
-			break;
-		}
-		case LS_BRACKET_TOKEN:{
-			printf("[");
-			break;
-		}
-		case RS_BRACKET_TOKEN:{
-			printf("]");
-			break;
-		}
-		case PRINT_TOKEN:{
-			printf("print");
-			break;
-		}
-		case ASS_TOKEN:{
-			printf("=");
-			break;
-		}
-		case LET_TOKEN:{
-			printf("let");
-			break;
-		}
-		case FOR_TOKEN:{
-			printf("for");
-			break;
-		}
-		case IN_TOKEN:{
-			printf("in");
-			break;
-		}
-		case COLON_TOKEN:{
-			printf(":");
-			break;
-		}
-		case I32_TOKEN:{
-			printf("i32");
-			break;
-		}
-		case F32_TOKEN:{
-			printf("f32");
-			break;
-		}
-		case STR_TOKEN:{
-			printf("str");
-			break;
-		}
-		case COMMA_TOKEN:{
-			printf(",");
+		case SEMI_COLON_TOKEN:{
+			printf(";");
 			break;
 		}
 		case END_LINE_TOKEN:{
-			printf("End-Line");
+			printf("END-LINE");
 			break;
 		}
 		case END_TOKEN:{
 			printf("End-Token");
-			break;
-		}
-		case IF_TOKEN:{
-			printf("if");
-			break;
-		}
-		case ELSE_TOKEN:{
-			printf("else");
 			break;
 		}
 		default : {
@@ -286,430 +294,204 @@ char* resizeString(char* str, long length){
 	return newStr;
 }
 
-long lexID(TokenArray* tokenArr, char* text, long lineNumber){
-	char* id = (char*)malloc(sizeof(char));
-	long cappacity = 1;
-	long chars = 0;
-	while(isAlnum(*text)){
-		id[chars] = *text;
-		chars++;
-		text++;
-		if(chars == cappacity){
-			id = resizeString(id, cappacity);
-			cappacity *= 2;
-		}
+char* addChar(char* text, char* str, int* index, int* cappacity){
+	str[*index] = *text;
+	(*index) += 1;
+	if(*index == *cappacity){
+		str = resizeString(str, *cappacity);
+		(*cappacity) *= 2;
 	}
-	id[chars] = '\0';
-	chars++;
-	emitToken(ID_TOKEN, id, chars, tokenArr, lineNumber);
-	return chars-1;
+	return str;
 }
 
-TokenArray* initTokenArray(){
-	TokenArray* arr = (TokenArray*)malloc(sizeof(TokenArray));
-	arr->tokens = (Token*)malloc(sizeof(Token));
-	arr->cappacity = 1;
-	arr->tokenCount = 0;
-	return arr;
+int tokenizeString(TokenArray* tokenArr, char* text, long textSize, TokenType type, int lineNumber){
+	char* tempText = text;
+	text++;
+	char* str = (char*)malloc(sizeof(char));
+	int* cappacity = (int*)malloc(sizeof(int));
+	int* index = (int*)malloc(sizeof(int));
+	*cappacity = 1;
+	*index = 0;
+	while(*text != '\"'){
+		addChar(text, str, index, cappacity);
+		text++;
+		if(*text == '\0'){
+			printf("Non-terminating string; missing a: \" ");
+			exit(1);
+		}
+	}
+	str[*index] = '\0';
+	emitToken(type, str, *index, tokenArr, lineNumber);
+	free(cappacity);
+	int i = *index;
+	free(index);
+	return i+2;
 }
+
+int tokenizeNumber(TokenArray* tokenArr, char* text, long textSize, int lineNumber){
+	char* newText = text;
+	int* cappacity = (int*)malloc(sizeof(int));
+	int* index = (int*)malloc(sizeof(int));
+	*cappacity = 1;
+	*index = 0;
+	char* num = (char*)malloc(sizeof(char));
+	short numOfDots = 0;
+	while((isDigit(*text) || *text == '.') && numOfDots < 2){
+		if(*text == '.') numOfDots++;
+		addChar(text, num, index, cappacity);
+		text++;
+	}
+	num[*index] = '\0';
+	if(numOfDots == 1){
+		emitToken(FLOAT_TOKEN, num, *index, tokenArr, lineNumber);
+	}
+	else if(numOfDots == 0){
+		emitToken(INT_TOKEN, num, *index, tokenArr, lineNumber);
+	}
+	else{
+		printf("Error lexing number; too many '.'s");
+		exit(1);
+	}
+	free(cappacity);
+	int i = *index;
+	free(index);
+	newText += i;
+	return i;
+}
+
+int tokenizeWord(TokenArray* tokenArr, char* text, long textSize, int lineNumber){
+	char* word = (char*)malloc(sizeof(char));
+	int* cappacity = (int*)malloc(sizeof(int));
+	int* index = (int*)malloc(sizeof(int));
+	*cappacity = 1;
+	*index = 0;
+	while(isAlnum(*text)) {
+		word = addChar(text, word, index, cappacity);
+		text++;
+	}
+	word[*index] = '\0';
+	emitToken(WORD_TOKEN, word, *index, tokenArr, lineNumber);
+	free(cappacity);
+	int i = *index;
+	free(index);
+	return i;
+}
+
+bool isSymChar(char c){
+	//probably need to change what a symbol can't be
+	return !(isAlnum(c)) 
+	&& c != '\n'
+	&& c != ' '
+	&& c != '\r'
+	&& c != '\t'
+	&& c != ';'
+	&& c != '\0'; 
+}
+
+int tokenizeSizedSymbolString(TokenArray* tokenArr, char* text, long textSize, int lineNumber, int length){
+	char* symString = (char*)malloc(sizeof(char));
+	int* cappacity = (int*)malloc(sizeof(int));
+	int* index = (int*)malloc(sizeof(int));
+	*cappacity = 1;
+	*index = 0;
+	for(int i = 0; i < length; i++) {
+		symString = addChar(text, symString, index, cappacity);
+		text++;
+	}
+	symString[*index] = '\0';
+	emitToken(SYM_TOKEN, symString, *index, tokenArr, lineNumber);
+	free(cappacity);
+	int i = *index;
+	free(index);
+	return i;
+}
+
+TrieNode* findTrieNode(TrieNode* n, char c){
+	while(n != NULL && n->letter != c) n = n->next;
+	return n;
+}
+
+int tokenizeSymbolString(TokenArray* tokenArr, char* text, long textSize, int lineNumber){
+	char* symString = (char*)malloc(sizeof(char));
+	int* cappacity = (int*)malloc(sizeof(int));
+	int* index = (int*)malloc(sizeof(int));
+	int longestIndex = 0;
+	int currentIndex = 0;
+	*cappacity = 1;
+	*index = 0;
+	char* text2 = text;
+	TrieNode* n = findTrieNode(tokenArr->trie->root->child, *text2);
+	while(isSymChar(*text2) && n != NULL) {
+		symString = addChar(text2, symString, index, cappacity);
+		text2++;
+		currentIndex++;
+		if(n->validEnd) longestIndex = currentIndex;
+		n = findTrieNode(n->child, *text2);
+	}
+	symString[*index] = '\0';
+	if(longestIndex > 0) tokenizeSizedSymbolString(tokenArr, text, textSize, lineNumber, longestIndex);
+	else {
+		printf("Error parsing symbol");
+		exit(1);
+	}
+	free(symString);
+	free(cappacity);
+	int i = *index;
+	free(index);
+	return i;
+}
+
+//while findnode != NULL and char isn't ascii
+//	add to curr tok
+//	if it is in the trie, ascii
+// 	if not it's a word/identifier
+
+
+//words: apples, harry, Cj, 
+//symbols: !?!, <<@, ....
 
 void tokenize(TokenArray* tokenArr, char* text, long textSize){
 	long lineNumber = 1;
-	//printf("here");
-	//exit(1);
-	/*Token* tokens = (Token*)malloc(sizeof(Token));
-	long cappacity = 1;
-	long numberOfTokens = 0;
-	TokenArray tokenArr = {tokens, cappacity, numberOfTokens};*/
-	//Token* tokens = tokenArr->tokens;
 	while(*text != '\0'){
 		switch(*text){
-			case ' ':{
-				text++;
-				break;
-			}
+			case ' ':
+			case '\r':
 			case '\t':{
 				text++;
 				break;
 			}
+			case ';':{
+				emitToken(SEMI_COLON_TOKEN, NULL, 0, tokenArr, lineNumber);
+				text++;
+				break;
+			}
 			case '\n':{
-				//emitToken(END_LINE_TOKEN, NULL, 0, tokenArr, lineNumber);
+				emitToken(END_LINE_TOKEN, NULL, 0, tokenArr, lineNumber);
 				lineNumber++;
 				text++;
 				break;
 			}
-			case '\r':{
-				text++;
-				break;
-			}
-			case '+':{
-				text++;
-				emitToken(PLUS_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
-				break;
-			}
-			case '-':{
-				text++;
-				emitToken(SUB_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
-				break;
-			}
-			case '*':{
-				text++;
-				emitToken(MULT_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
-				break;
-			}
-			case '/':{
-				text++;
-				if(*text == '/'){
-					while((*text != '\n') && (*text != '\0')){
-						text++;
-					}
-				}
-				else{
-					emitToken(DIV_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
-				}
-				break;
-			}
-			case '%':{
-				text++;
-				emitToken(REM_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
-				break;
-			}
-			case '^':{
-				text++;
-				emitToken(EXP_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
-				break;
-			}
-			case '!':{
-				text++;
-				emitToken(FACT_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
-				break;
-			}
-			case ',':{
-				text++;
-				emitToken(COMMA_TOKEN, NULL, 0, tokenArr, lineNumber);
-				break;
-			}
-			case '(':{
-				text++;
-				emitToken(LPAREN_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
-				break;
-			}
-			case ')':{
-				text++;
-				emitToken(RPAREN_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
-				break;
-			}
-			case '{':{
-				text++;
-				emitToken(LC_BRACKET_TOKEN, NULL, 0, tokenArr, lineNumber);
-				break;
-			}
-			case '}':{
-				text++;
-				emitToken(RC_BRACKET_TOKEN, NULL, 0, tokenArr, lineNumber);
-				break;
-			}
-			case '[':{
-				text++;
-				emitToken(LS_BRACKET_TOKEN, NULL, 0, tokenArr, lineNumber);
-				break;
-			}
-			case ']':{
-				text++;
-				emitToken(RS_BRACKET_TOKEN, NULL, 0, tokenArr, lineNumber);
-				break;
-			}
-			case ';':{
-				text++;
-				emitToken(END_LINE_TOKEN, NULL, 0, tokenArr, lineNumber);
-				break;
-			}
-			case ':':{
-				text++;
-				emitToken(COLON_TOKEN, NULL, 0, tokenArr, lineNumber);
-				break;
-			}
-			case '=':{
-				if(matchAndDelimited(text, "==", 2)){
-					text+=2;
-					emitToken(EQUAL_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
-					break;
-				}
-				else{
-					text++;
-					emitToken(ASS_TOKEN, NULL, 0, tokenArr, lineNumber);
-					break;
-				}
-			}
-			case '<':{
-				if(matchAndDelimited(text, "<=", 2)){
-					text+=2;
-					emitToken(LOE_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
-					break;
-				}
-				else{
-					text++;
-					emitToken(LESS_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
-					break;
-				}
-			}
-			case '>':{
-				if(matchAndDelimited(text, ">=", 2)){
-					text+=2;
-					emitToken(GOE_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
-					break;
-				}
-				else{
-					text++;
-					emitToken(GREATER_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
-					break;
-				}
-			}	
-			case 'a' :{
-				if(matchAndDelimited(text, "and", 3)){
-					text+=3;
-					emitToken(AND_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
-					break;
-				}
-				else{
-					text += lexID(tokenArr, text, lineNumber);
-					break;
-				}
-			}
-			case 'b':{
-				if(matchAndDelimited(text, "bool", 4)){
-					text+=4;
-					emitToken(BOOL_TOKEN, NULL, 0, tokenArr, lineNumber);
-					break;
-				}
-				else{
-					text += lexID(tokenArr, text, lineNumber);
-					break;
-				}				
-			}
-			case 'f' :{
-				if(matchAndDelimited(text, "false", 5)){
-					text+=5;
-					emitToken(FALSE_VAL_TOKEN, NULL, 0, tokenArr, lineNumber);
-					break;
-				}
-				else if(matchAndDelimited(text, "f32", 3)){
-					text+=3;
-					emitToken(F32_TOKEN, NULL, 0, tokenArr, lineNumber);
-					break;
-				}
-				else if(matchAndDelimited(text, "for", 3)){
-					text+=3;
-					emitToken(FOR_TOKEN, NULL, 0, tokenArr, lineNumber);
-					break;
-				}
-				else{
-					text += lexID(tokenArr, text, lineNumber);
-					break;
-				}
-			}
-			case 'n' :{
-				if(matchAndDelimited(text, "not", 3)){
-					text+=3;
-					emitToken(NOT_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
-					break;
-				}
-				else{
-					text += lexID(tokenArr, text, lineNumber);
-					break;
-				}
-				
-			}
-			case 'e' :{
-				if(matchAndDelimited(text, "else", 4)){
-					text+=4;
-					emitToken(ELSE_TOKEN, NULL, 0, tokenArr, lineNumber);
-					break;
-				}
-				else{
-					text += lexID(tokenArr, text, lineNumber);
-					break;
-				}
-				
-			}
-			case 'o' :{
-				if(matchAndDelimited(text, "or", 2)){
-					text+=2;
-					emitToken(OR_OP_TOKEN, NULL, 0, tokenArr, lineNumber);
-					break;
-				}
-				else{
-					text += lexID(tokenArr, text, lineNumber);
-					break;
-				}
-			}
-			case 'p' :{
-				if(matchAndDelimited(text, "print", 5)){
-					text+=5;
-					emitToken(PRINT_TOKEN, NULL, 0, tokenArr, lineNumber);
-					break;
-				}
-				else{
-					text += lexID(tokenArr, text, lineNumber);
-					break;
-				}
-			}
-			case 'l' :{
-				if(matchAndDelimited(text, "let", 3)){
-					text+=3;
-					emitToken(LET_TOKEN, NULL, 0, tokenArr, lineNumber);
-					break;
-				}
-				else{
-					text += lexID(tokenArr, text, lineNumber);
-					break;
-				}
-			}		
-			case 't' :{
-				if(matchAndDelimited(text, "true", 4)){
-					text+=4;
-					emitToken(TRUE_VAL_TOKEN, NULL, 0, tokenArr, lineNumber);
-					break;
-				}
-				else{
-					text += lexID(tokenArr, text, lineNumber);
-					break;
-				}
-			}			
-			case 'i' :{
-				if(matchAndDelimited(text, "i32", 3)){
-					text+=3;
-					emitToken(I32_TOKEN, NULL, 0, tokenArr, lineNumber);
-					break;
-				}
-				else if(matchAndDelimited(text, "in", 2)){
-					text+=2;
-					emitToken(IN_TOKEN, NULL, 0, tokenArr, lineNumber);
-					break;
-				}
-				else if(matchAndDelimited(text, "if", 2)){
-					text+=2;
-					emitToken(IF_TOKEN, NULL, 0, tokenArr, lineNumber);
-					break;
-				}
-				else{
-					text += lexID(tokenArr, text, lineNumber);
-					break;
-				}
-			}	
-			case 's' :{
-				if(matchAndDelimited(text, "str", 3)){
-					text+=3;
-					emitToken(STR_TOKEN, NULL, 0, tokenArr, lineNumber);
-					break;
-				}
-				else{
-					text += lexID(tokenArr, text, lineNumber);
-					break;
-				}
-			}
 			case '\"' :{
-				text++;//"
-				char* str = (char*)malloc(sizeof(char));
-				long cappacity = 1;
-				long chars = 0;
-				while(*text != '\"'){
-					str[chars] = *text;
-					chars++;
-					text++;
-					if(chars == cappacity){
-						str = resizeString(str, cappacity);
-						cappacity *= 2;
-					}
-					if(*text == '\0'){
-						printf("Non-terminating string; missing a: \" ");
-						exit(1);
-					}
-				}
-				str[chars] = '\0';
-				chars++;
-				text++;//"
-				emitToken(STR_VAL_TOKEN, str, chars, tokenArr, lineNumber);
+				text += tokenizeString(tokenArr, text, textSize, STR_A_TOKEN, lineNumber);
 				break;
 			}	
 			case '\'' :{
-				text++;//"
-				char* str = (char*)malloc(sizeof(char));
-				long cappacity = 1;
-				long chars = 0;
-				while(*text != '\''){
-					str[chars] = *text;
-					chars++;
-					text++;
-					if(chars == cappacity){
-						str = resizeString(str, cappacity);
-						cappacity *= 2;
-					}
-					if(*text == '\0'){
-						printf("Non-terminating string; missing a: \" ");
-						exit(1);
-					}
-				}
-				str[chars] = '\0';
-				chars++;
-				text++;//"
-				emitToken(IMUT_STR_VAL_TOKEN, str, chars, tokenArr, lineNumber);
+				text += tokenizeString(tokenArr, text, textSize, STR_B_TOKEN, lineNumber);
 				break;
 			}
-			default : {
+			default:{
 				if(isDigit(*text)){
-					long cappacity = 1;
-					long digits = 0;
-					char* num = (char*)malloc(sizeof(char));
-					short numOfDots = 0;
-					while((isDigit(*text) || *text == '.') && numOfDots < 2){
-						if(*text == '.') numOfDots++;
-						num[digits] = *text;
-						digits++;
-						text++;
-						if(cappacity == digits){
-							num = resizeString(num, cappacity);
-							cappacity *= 2;
-						}
-					}
-					num[digits] = '\0';
-					digits++;
-					if(numOfDots > 0){
-						emitToken(F32_VAL_TOKEN, num, digits, tokenArr, lineNumber);
-					}
-					else{
-						emitToken(I32_VAL_TOKEN, num, digits, tokenArr, lineNumber);
-					}
+					text += tokenizeNumber(tokenArr, text, textSize, lineNumber);
 				}
-				else if(isAl(*text)){
-					char* id = (char*)malloc(sizeof(char));
-					long cappacity = 1;
-					long chars = 0;
-					while(isAlnum(*text)){
-						id[chars] = *text;
-						chars++;
-						text++;
-						if(chars == cappacity){
-							id = resizeString(id, cappacity);
-							cappacity *= 2;
-						}
-					}
-					id[chars] = '\0';
-					chars++;
-					emitToken(ID_TOKEN, id, chars, tokenArr, lineNumber);
+				else if(isAlnum(*text)){
+					text += tokenizeWord(tokenArr, text, textSize, lineNumber);
 				}
 				else{
-					printf("unlexable token\n");
-					printf("x");
-					exit(1);
+					text += tokenizeSymbolString(tokenArr, text, textSize, lineNumber);
 				}
 			}
 		}
 	}
-	//printToken(&(tokenArr->tokens[0]));
-
-	//tokenArr->tokens = tokens;
-	//printToken(&(tokenArr->tokens[0]));
 	emitToken(END_TOKEN, NULL, 0, tokenArr, lineNumber);
 }
 
@@ -743,38 +525,152 @@ char* readFile(char* path){
 	return source;
 }
 
-//Chat-GPT baby!
 long getSizeOfFile(const char *filename) {
     FILE *file = fopen(filename, "r");
     if (file == NULL) {
         return -1; // Return -1 to indicate an error
     }
-
     fseek(file, 0, SEEK_END);
     long file_size = ftell(file);
-
     rewind(file); // Reset the file position to the beginning
-
     fclose(file);
-
     return file_size;
 }
 
 void lex(TokenArray* tokens, char * path){
-	/*FILE* file = getFileToRead(path);
-	long fileSize = getFileSize(file);
-	printf("%d", fileSize);
-	char* buffer = fillBuffer(file, fileSize);*/
 	long fileSize = getSizeOfFile(path);
 	char* buffer = readFile(path);
 	tokenize(tokens, buffer, fileSize);
-	//fclose(file);
 	free(buffer);
 }
 
+void freeTrieNode(TrieNode* t){
+	//don't free key -- it will be used later
+	if(t->child!=NULL) freeTrieNode(t->child);
+	if(t->next!=NULL) freeTrieNode(t->next);
+	free(t);
+}
+
+void freeTrie(Trie* t){
+	freeTrieNode(t->root);
+}
+
 void freeTokens(TokenArray* tokens){
-	//Values are used by the parser - maybe copy them?
-	//for(int i = 0; i < tokens->tokenCount; i++) if(tokens->tokens[i].value != NULL) free(tokens->tokens[i].value);
+	freeTrie(tokens->trie);
 	free(tokens->tokens);
 	free(tokens);
 }
+
+/*
+//add check for when it already exists
+int main(){
+	TokenArray* tokens = initTokenArray(tokens);
+	int numberOfTokens = 100;
+	char** strings = (char**)malloc(sizeof(char*)*numberOfTokens);
+	addToken(strings, 0, "<");
+	addToken(strings, 1, ">");
+	addToken(strings, 2, "<=");
+	addToken(strings, 3, ">=");
+	addToken(strings, 4, "+");
+	addToken(strings, 5, "+=");
+	addToken(strings, 6, "-");
+	addToken(strings, 7, "-=");
+	addToken(strings, 8, "*");
+	addToken(strings, 9, "*=");
+	addToken(strings, 10, "/");
+	addToken(strings, 11, "/=");
+	addToken(strings, 12, "%");
+	addToken(strings, 13, "%=");
+	addToken(strings, 14, "==");
+	addToken(strings, 15, "[");
+	addToken(strings, 16, "]");
+	addToken(strings, 17, "{");
+	addToken(strings, 18, "}");
+	addToken(strings, 19, "(");
+	addToken(strings, 20, ")");
+	addToken(strings, 21, "^");
+	addToken(strings, 22, ",");
+	addToken(strings, 23, "!");
+	addToken(strings, 24, ":");
+	addToken(strings, 25, "=");
+
+	addString(tokens->trie, strings[0]);
+	addString(tokens->trie, strings[1]);
+	addString(tokens->trie, strings[2]);
+	addString(tokens->trie, strings[3]);
+	addString(tokens->trie, strings[4]);
+	addString(tokens->trie, strings[5]);
+	addString(tokens->trie, strings[6]);
+	addString(tokens->trie, strings[7]);
+	addString(tokens->trie, strings[8]);
+	addString(tokens->trie, strings[9]);
+	addString(tokens->trie, strings[10]);
+	addString(tokens->trie, strings[11]);
+	addString(tokens->trie, strings[12]);
+	addString(tokens->trie, strings[13]);
+	addString(tokens->trie, strings[14]);
+	addString(tokens->trie, strings[15]);
+	addString(tokens->trie, strings[16]);
+	addString(tokens->trie, strings[17]);
+	addString(tokens->trie, strings[18]);
+	addString(tokens->trie, strings[19]);
+	addString(tokens->trie, strings[20]);
+	addString(tokens->trie, strings[21]);
+	addString(tokens->trie, strings[22]);
+	addString(tokens->trie, strings[23]);
+	addString(tokens->trie, strings[24]);
+	addString(tokens->trie, strings[25]);
+
+	
+	if(tokens->trie->root->child != NULL){
+		printf("called");
+		exit(1);
+	}
+	exit(1);
+	//Arithmetic Test
+	lex(tokens, "apples.txt");
+	printTokens(tokens);
+	
+	int numberOfTokens = 100;
+	char** tokens = (char**)malloc(sizeof(char*)*numberOfTokens);
+	addToken(tokens, 0, "<");
+	addToken(tokens, 1, "<<");
+	addToken(tokens, 2, "<<?");
+	addToken(tokens, 3, "<<!");
+	addToken(tokens, 4, "<<??");
+}*/
+
+
+
+/*
+op e1:bool ? e2:t : e3:t		
+op e1:i32 + e2:i32 = sum(e1, e2);	
+
+e1 must be bool, e1,e3 can be any expression type but they have to be equal
+
+
+*/
+
+/*
+need to parse ops - for now could do it manually?
+
+*/
+
+
+/*
+
+After Ops:
+
+For tokenizing words and sym strings
+while next_char() is valid
+
+
+need a valid so far string
+
+
+ammend this with numbers, strings and words
+
+words
+numbers
+symbol strings
+*/

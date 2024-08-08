@@ -13,6 +13,9 @@
 #include "Analyzer.h"
 #include "Rewriting.h"
 #include "ASTObject.h"
+#include "TypeMap.h"
+#include "TemplateTree.h"
+#include "Template.h"
 
 int main();
 

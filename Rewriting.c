@@ -156,7 +156,7 @@ ASTNode* rewriteLoopType3(Rewriter* rewriter, ASTNode* loop){
 	ASTNode* var = uniqueVariable(rewriter->table, newASTValue(newI32(0), line, NULL));
 	emitNodeToBlock(var, b);
 	ASTNode* refToVar = newASTID(var->var.id, line+1, NULL);	
-	ASTNode* newLoop = newASTSimpleLoop(newASTBinaryOP(refToVar, LESS_OP, rewriteNode(rewriter, loop->loop.n1)->expr.expr, line+1, NULL), rewriteNode(rewriter, loop->loop.b), line+1, NULL);
+	ASTNode* newLoop = NULL;//newASTSimpleLoop(newASTBinaryOP(refToVar, LESS_OP, rewriteNode(rewriter, loop->loop.n1)->expr.expr, line+1, NULL), rewriteNode(rewriter, loop->loop.b), line+1, NULL);
 	int newLine = newLoop->simpleLoop.block->block.numberOfNodes+1;
 	ASTNode* inc = newASTAssignment(var->var.id, newASTBinaryOP(newASTID(var->var.id, newLine, NULL), PLUS_OP, newASTValue(newI32(1), newLine, NULL), newLine, NULL), newLine, NULL);
 	emitNodeToBlock(inc, newLoop->simpleLoop.block);
@@ -244,7 +244,7 @@ VariableTable* newVariableTable(){
 
 Rewriter* newRewriter(AST* ast){
 	Rewriter* rewriter = (Rewriter*)malloc(sizeof(Rewriter));
-	rewriter->rewrittenAST = newAST();
+	//rewriter->rewrittenAST = newAST();
 	rewriter->ast = ast;
 	rewriter->table = newVariableTable();
 	return rewriter;

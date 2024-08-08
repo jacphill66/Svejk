@@ -88,7 +88,7 @@ void compileASTIDNode(Program* p){
 void compileASTBinaryNode(Compiler* c, ASTBinaryOP* node){
 	compileASTNode(c, node->lhs);
 	compileASTNode(c, node->rhs);
-	emitOP(c, node->op);
+	//emitOP(c, node->op);//fix this!
 }
 
 void compileASTUnaryNode(Compiler* c, ASTUnaryOP* node){

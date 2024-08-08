@@ -1,5 +1,63 @@
 #include "Common.h"
 
+void printType(Type* t){
+	switch(t->kind){
+		case Trivial_KIND:{
+			switch(t->trivial){
+				case INTERNAL_ERROR_TYPE:{
+					printf("Internal Error Type");
+					break;
+				}
+				case I32_TYPE:{
+					printf("I32 Type");
+					break;
+				}
+				case F32_TYPE:{
+					printf("F32 Type");
+					break;
+				}
+				case STR_TYPE:{
+					printf("Str Type");
+					break;
+				}
+				case BOOL_TYPE:{
+					printf("Bool Type");
+					break;
+				}
+				case INFERRED_TYPE:{
+					printf("Inferred Type");
+					break;
+				}
+				case UNDECLARED_ERROR_TYPE:{
+					printf("Undeclared Error Type");
+					break;
+				}
+				case REDECLARATION_ERROR_TYPE:{
+					printf("Redeclaration Error Type");
+					break;
+				}
+				case TYPE_MISMATCH_ERROR_TYPE:{
+					printf("Type Mismatch Error Type");
+					break;
+				}
+				case VOID_TYPE:{
+					printf("Void Error Type");
+					break;
+				}
+				default:{
+					printf("Invalid Trivial Type\n");
+					exit(1);
+				}
+			}
+			break;
+		}
+		default:{
+			printf("Invalid Kind\n");
+			exit(1);
+			break;
+		}
+	}
+}
 void freeType(Type* t){
 	if(t != NULL){
 		switch(t->kind){

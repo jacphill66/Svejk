@@ -1,5 +1,4 @@
 #include "Svejk.h"
-#include "TypeMap.h"
 
 /*
 Right now:
@@ -10,13 +9,84 @@ Right now:
 	3.) add index assignment: expr[i] =
 	4.) add type parsing method and add
 	5.) add other types of tables
+	5.) add assignment ops
+	5.) add for in statement
 	6.) fix analyzer to ensure the last statement of a block is a value 
 */
 
 
 int main(){
-	
 	TokenArray* tokens = initTokenArray(tokens);
+	
+	//operators
+	int numberOfTokens = 26;
+	char** strings = (char**)malloc(sizeof(char*)*numberOfTokens);
+	addToken(strings, 0, "<");
+	addToken(strings, 1, ">");
+	addToken(strings, 2, "<=");
+	addToken(strings, 3, ">=");
+	addToken(strings, 4, "+");
+	addToken(strings, 5, "+=");
+	addToken(strings, 6, "-");
+	addToken(strings, 7, "-=");
+	addToken(strings, 8, "*");
+	addToken(strings, 9, "*=");
+	addToken(strings, 10, "/");
+	addToken(strings, 11, "/=");
+	addToken(strings, 12, "%");
+	addToken(strings, 13, "%=");
+	addToken(strings, 14, "==");
+	addToken(strings, 15, "[");
+	addToken(strings, 16, "]");
+	addToken(strings, 17, "{");
+	addToken(strings, 18, "}");
+	addToken(strings, 19, "(");
+	addToken(strings, 20, ")");
+	addToken(strings, 21, "^");
+	addToken(strings, 22, ",");
+	addToken(strings, 23, "!");
+	addToken(strings, 24, ":");
+	addToken(strings, 25, "=");
+
+	addString(tokens->trie, strings[0]);
+	addString(tokens->trie, strings[1]);
+	addString(tokens->trie, strings[2]);
+	addString(tokens->trie, strings[3]);
+	addString(tokens->trie, strings[4]);
+	addString(tokens->trie, strings[5]);
+	addString(tokens->trie, strings[6]);
+	addString(tokens->trie, strings[7]);
+	addString(tokens->trie, strings[8]);
+	addString(tokens->trie, strings[9]);
+	addString(tokens->trie, strings[10]);
+	addString(tokens->trie, strings[11]);
+	addString(tokens->trie, strings[12]);
+	addString(tokens->trie, strings[13]);
+	addString(tokens->trie, strings[14]);
+	addString(tokens->trie, strings[15]);
+	addString(tokens->trie, strings[16]);
+	addString(tokens->trie, strings[17]);
+	addString(tokens->trie, strings[18]);
+	addString(tokens->trie, strings[19]);
+	addString(tokens->trie, strings[20]);
+	addString(tokens->trie, strings[21]);
+	addString(tokens->trie, strings[22]);
+	addString(tokens->trie, strings[23]);
+	addString(tokens->trie, strings[24]);
+	addString(tokens->trie, strings[25]);
+	
+	addToken(strings, 0, "+");
+	addToken(strings, 1, "-");
+	addToken(strings, 2, "*");
+	addToken(strings, 3, "^");
+	addToken(strings, 4, "%");
+
+	Template* t1 = newOpTemplate(newExpressionTemplate(NULL, newTrivialType(I32_TYPE)), newExpressionTemplate(NULL, newTrivialType(I32_TYPE)), strings[0], newTrivialType(I32_TYPE), 0, false, INFIX_OP);
+	Template* t2 = newOpTemplate(newExpressionTemplate(NULL, newTrivialType(I32_TYPE)), newExpressionTemplate(NULL, newTrivialType(I32_TYPE)), strings[1], newTrivialType(I32_TYPE), 0, false, INFIX_OP);
+	Template* t3 = newOpTemplate(newExpressionTemplate(NULL, newTrivialType(I32_TYPE)), newExpressionTemplate(NULL, newTrivialType(I32_TYPE)), strings[2], newTrivialType(I32_TYPE), 1, false, INFIX_OP);
+	Template* t4 = newOpTemplate(newExpressionTemplate(NULL, newTrivialType(I32_TYPE)), newExpressionTemplate(NULL, newTrivialType(I32_TYPE)), strings[3], newTrivialType(I32_TYPE), 0, true, INFIX_OP);	
+	Template* t5 = newOpTemplate(newExpressionTemplate(NULL, newTrivialType(I32_TYPE)), newExpressionTemplate(NULL, newTrivialType(I32_TYPE)), strings[4], newTrivialType(I32_TYPE), 0, false, INFIX_OP);
+
 	char* arithmeticTest = "tests/Arithmetic Test.txt";
 	char* stringTest = "tests/string Test.txt";
 	char* globalVariableTest = "tests/Global Variables Test.txt";
@@ -27,9 +97,29 @@ int main(){
 	char* forTest = "tests/for Test.txt";
 	char* ifTest = "tests/If Test.txt";
 	char* tableTest = "tests/Just Parsing/Table Test.txt";
-	lex(tokens, tableTest);
+	char* lexerTest = "tests/apples.txt";
+	char* simpleTest = "tests/simple.txt";
+	lex(tokens, simpleTest);
 	printTokens(tokens);
 	Parser* parser = newParser();
+	
+	insertTemplate(parser->t, strings[0], -1, t1);
+	insertTemplate(parser->t, strings[1], -1, t2);
+	insertTemplate(parser->t, strings[2], -1, t3);
+	insertTemplate(parser->t, strings[3], -1, t4);
+	insertTemplate(parser->t, strings[4], -1, t5);
+	
+	//different prefix, postfix, infix trees?
+	//union types
+	//special types like number
+	//something else?
+	
+	/*printTemplate(searchTemplate(parser->t, strings[0]));
+	printTemplate(searchTemplate(parser->t, strings[1]));
+	printTemplate(searchTemplate(parser->t, strings[2]));
+	printTemplate(searchTemplate(parser->t, strings[3]));
+	printTemplate(searchTemplate(parser->t, strings[4]));*/
+
 	parse(parser, tokens);
 	freeTokens(tokens);
 	printAST(parser->ast);
@@ -54,6 +144,12 @@ int main(){
 	printf("completed\n");
 	return 0;
 }
+/*
+1.) extract type from type map into its own files
+2.) be able to parse infix, prefix and postfix expressions by tonight
+3.) extract template from tree
+
+*/
 
 /*
 TODO:
@@ -127,3 +223,15 @@ TODO:
 	Work on newlines and placement of: ;
 	Add line counter to rewriter 
 */
+
+/*
+same op different type
+easy to parse, hard to analyze
+*/
+//+i32i32
+//template to id function?
+//tomorrow: finish parser, be able to parse everything most of the tests should pass
+//templates for procedures, blocks...
+//
+
+

@@ -118,6 +118,7 @@ typedef struct {
 	ValueType type;
 }Value;
 
+void printType(Type* t);
 void freeType(Type* t);
 
 Value newI32(int i);
@@ -127,6 +128,5 @@ Value newF32(float f32);
 
 TrivialType getTrivialType(Type* t);
 Type* newTrivialType(TrivialType type);
-
 
 #endif

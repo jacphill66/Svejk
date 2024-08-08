@@ -4,68 +4,23 @@
 #include "Common.h"
 #include <string.h>
 
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+#include <stdio.h>
+
+typedef struct TrieNode TrieNode;
 
 typedef enum{
-	I32_VAL_TOKEN,
-	F32_VAL_TOKEN,
-	STR_VAL_TOKEN,
-	IMUT_STR_VAL_TOKEN,
-	TRUE_VAL_TOKEN,
-	FALSE_VAL_TOKEN,
-	
-	ID_TOKEN,
-
-	PLUS_OP_TOKEN,
-	SUB_OP_TOKEN,
-	MULT_OP_TOKEN,
-	DIV_OP_TOKEN,
-	REM_OP_TOKEN,
-	EXP_OP_TOKEN,
-
-	
-	FACT_OP_TOKEN,
-	
-	EQUAL_OP_TOKEN,
-	
-	LESS_OP_TOKEN,
-	GREATER_OP_TOKEN,
-	LOE_OP_TOKEN,
-	GOE_OP_TOKEN,
-	
-	AND_OP_TOKEN,
-	OR_OP_TOKEN,
-	NOT_OP_TOKEN,
-	
-	LPAREN_OP_TOKEN,
-	RPAREN_OP_TOKEN,
-	LC_BRACKET_TOKEN,
-	RC_BRACKET_TOKEN,
-	LS_BRACKET_TOKEN,
-	RS_BRACKET_TOKEN,
-	
-	PRINT_TOKEN,
-	FOR_TOKEN,
-	IN_TOKEN,
-	LET_TOKEN,
-	
-	COLON_TOKEN,
-	ASS_TOKEN,
-	COMMA_TOKEN,
-	
-	I32_TOKEN,
-	F32_TOKEN, 
-	STR_TOKEN,
-	BOOL_TOKEN,
-	
-	IF_TOKEN,
-	ELSE_TOKEN,
-	
-	COMMENT_TOKEN,
-	
+	INT_TOKEN,
+	FLOAT_TOKEN,
+	STR_A_TOKEN,
+	STR_B_TOKEN,	
+	WORD_TOKEN,
+	SYM_TOKEN,
+	SEMI_COLON_TOKEN,
 	END_LINE_TOKEN,
-	
 	END_TOKEN,
-	
 } TokenType;
 
 typedef struct {
@@ -75,8 +30,21 @@ typedef struct {
 	long line;
 } Token;
 
+struct TrieNode{
+	char letter;
+	bool validEnd;
+	TrieNode* next;
+	//might add prev;
+	TrieNode* child;
+};
+
+typedef struct{
+	TrieNode* root;
+}Trie;
+
 typedef struct {
 	Token* tokens;
+	Trie* trie;
 	long cappacity;
 	long tokenCount;
 } TokenArray;
@@ -86,5 +54,6 @@ void lex(TokenArray* tokenArr, char* path);
 void printTokens(TokenArray* arr);
 void freeTokens(TokenArray* tokens);
 void printToken(Token* t);
-
+void addString(Trie* t, char* str);
+void addToken(char** tokens, int tokenCount, const char* token);
 #endif

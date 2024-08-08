@@ -132,7 +132,7 @@ ASTNode* newASTNode(){
 	return (ASTNode*)malloc(sizeof(ASTNode));
 }
 
-ASTNode* newASTBinaryOP(ASTNode* lhs, OPCode op, ASTNode* rhs, long line, Type* t){
+ASTNode* newASTBinaryOP(ASTNode* lhs, char* op, ASTNode* rhs, long line, Type* t){
 	ASTNode* n = newASTNode();
 	n->type = ASTBinaryOP_NODE_TYPE;
 	n->binaryOP.lhs = lhs;
@@ -421,7 +421,7 @@ void printASTNode(AST* ast, ASTNode* node){
 		case ASTBinaryOP_NODE_TYPE :{
 			printf("(");
 			printASTNode(ast, node->binaryOP.lhs);
-			printOP(node->binaryOP.op);
+			printf("%s", node->binaryOP.op);
 			printASTNode(ast, node->binaryOP.rhs);
 			printf(")");
 			break;

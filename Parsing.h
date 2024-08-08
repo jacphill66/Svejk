@@ -7,9 +7,12 @@
 #include "ScopeChain.h"
 #include "Memory.h"
 #include "ASTObject.h"
+#include "Template.h"
+#include "TemplateTree.h"
 
 typedef struct {
 	AST* ast;
+	TemplateRedBlackTree* t;
 } Parser;
 
 ASTNode* newBlock();
