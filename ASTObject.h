@@ -2,6 +2,7 @@
 #define ASTOBJECT_H_
 
 #include "Common.h"
+#include "Template.h"
 
 typedef struct ASTNode ASTNode;
 
@@ -14,11 +15,17 @@ typedef struct{
 }ASTBinaryOP;
 
 typedef struct{
-	OPCode op;
+	char* op;
 	ASTNode* opperand;
 	long line;
+	OperatorType type;
 	Type* t;
 }ASTUnaryOP;
+
+typedef struct {
+	char** words;
+	//fill in
+}ASTProc;
 
 typedef struct{
 	//hold args?
@@ -182,7 +189,7 @@ ASTNode* newASTNode();
 
 ASTNode* newASTBinaryOP(ASTNode* lhs, char* op, ASTNode* rhs, long line, Type* t);
 
-ASTNode* newASTUnaryOP(ASTNode* opperand, OPCode op, long line, Type* t);
+ASTNode* newASTUnaryOP(ASTNode* opperand, char* op, long line, Type* t);
 ASTNode* newASTValue(Value v, long line, Type* t);
 ASTNode* newASTExpression(ASTNode* expr, bool statement, long line, Type* t);
 ASTNode* newASTID(char* id, long line, Type* t);

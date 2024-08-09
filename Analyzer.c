@@ -1,5 +1,5 @@
 #include "Analyzer.h"
-
+/*
 Error* newError(Type* type, char* message, long line){
 	Error* error = (Error*) malloc(sizeof(Error));
 	error->type = type;
@@ -90,7 +90,7 @@ Type* analyzeBinary(Analyzer* a, ErrorArray* errors, ASTBinaryOP* binOP){
 	//freeType(type1);
 	//freeType(type2);
 	if(t1 == -1 || t2 == -1) return newTrivialType(TYPE_MISMATCH_ERROR_TYPE);
-/*	switch (binOP->op){
+	switch (binOP->op){
 		case PLUS_OP:
 		case SUB_OP:
 		case MULT_OP:
@@ -125,7 +125,7 @@ Type* analyzeBinary(Analyzer* a, ErrorArray* errors, ASTBinaryOP* binOP){
 		}	
 		//case custom op ...
 	}
-*/
+
 }
 
 Type* analyzeUnary(Analyzer* a, ErrorArray* errors, ASTUnaryOP* unOP){
@@ -393,10 +393,6 @@ ErrorArray* analyze(Analyzer* a, AST* ast){
 		//freeType(analyzeNode(a, a->a->errors, &ast->nodes[i]));
 	}
 }
-/*
-ErrorArray* checkAndInferTypes(ErrorArray* errors, AST* ast){
-	
-}*/
 
 void printError(Error* error){
 	//it depends on the type
@@ -480,3 +476,4 @@ Analyzer* newAnalyzer(){
 	newTypeScope(analyzer->varTypes);
 	return analyzer;
 }
+*/

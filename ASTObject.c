@@ -143,7 +143,7 @@ ASTNode* newASTBinaryOP(ASTNode* lhs, char* op, ASTNode* rhs, long line, Type* t
 	return n;
 }
 
-ASTNode* newASTUnaryOP(ASTNode* opperand, OPCode op, long line, Type* t){
+ASTNode* newASTUnaryOP(ASTNode* opperand, char* op, long line, Type* t){
 	ASTNode* n = newASTNode();
 	n->type = ASTUnaryOP_NODE_TYPE;
 	n->unaryOP.opperand = opperand;
@@ -428,12 +428,12 @@ void printASTNode(AST* ast, ASTNode* node){
 		}
 		case ASTUnaryOP_NODE_TYPE : {
 			printf("(");
-			if(node->unaryOP.op == FACT_OP){
+			if(node->unaryOP.type == POSTFIX_OP){
 				printASTNode(ast, node->unaryOP.opperand);
-				printOP(node->unaryOP.op);
+				printf("%s", node->unaryOP.op);
 			}
 			else{
-				printOP(node->unaryOP.op);
+				printf("%s", node->unaryOP.op);
 				printASTNode(ast, node->unaryOP.opperand);
 			}
 			printf(")");

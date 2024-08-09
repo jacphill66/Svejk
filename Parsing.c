@@ -374,68 +374,30 @@ ASTNode* literal(Parser* parser, Token t){
 }
 
 ASTNode* prefix(Parser* parser, TokenArray* tokens){
-	return literal(parser, advance(tokens));
-	/*
 	Token t = advance(tokens);
-	if(t.type == LPAREN_OP_TOKEN){
+	if(strcmp(t.value, "(")==0){//eventually define this dynamically
 		ASTNode* result = split(parser, tokens, 0);
 		advance(tokens);
 		return result;
 	}
-	switch(t.type){
-		case PLUS_OP_TOKEN: return newASTUnaryOP(split(parser, tokens, getPrefixPrec(t.type)+1), UNARY_PLUS_OP, t.line, NULL);
-		case SUB_OP_TOKEN: return newASTUnaryOP(split(parser, tokens, getPrefixPrec(t.type)+1), UNARY_MINUS_OP, t.line, NULL);
-		case NOT_OP_TOKEN: return newASTUnaryOP(split(parser, tokens, getPrefixPrec(t.type)+1), NOT_OP, t.line, NULL);
-		case LC_BRACKET_TOKEN: return parseBlockOrTable(tokens, parser);
-		default: return literal(parser, t);
-	}*/
+	Template* temp = searchTemplate(parser->t, t.value);
+	if(temp != NULL && temp->type == PREFIX_OP) return newASTUnaryOP(split(parser, tokens, temp->op.prec+1), t.value, t.line, NULL);
+	return literal(parser, t);
 }
 
+
 ASTNode* binaryOP(Parser* parser, char* op, ASTNode* lhs, TokenArray* tokens){
-	Template* t = searchTemplate(parser->t, op);
-	int prec = t->op.prec;
-	bool ass = t->op.ass;
-	if(ass) return newASTBinaryOP(lhs, op, split(parser, tokens, prec), tokens->tokens->line, NULL);
-	else return newASTBinaryOP(lhs, op, split(parser, tokens, prec+1), tokens->tokens->line, NULL);
-	/*
-	ASTNode* rhs;
-	if(op.value == '^')	rhs = split(parser, tokens, getOtherfixPrecedence(op.value));
-	else rhs = split(parser, tokens, getOtherfixPrecedence(op.value)+1);
-	if(op.value == '='){
-		advance(tokens);
-		return newASTBinaryOP(lhs, EQUAL_OP, rhs, op.line, NULL);
-	}
-	switch(op.value){
-		case EQUAL_OP_TOKEN : return newASTBinaryOP(lhs, EQUAL_OP, rhs, op.line, NULL);
-		case LESS_OP_TOKEN : return newASTBinaryOP(lhs, LESS_OP, rhs, op.line, NULL);
-		case GREATER_OP_TOKEN :	return newASTBinaryOP(lhs, GREATER_OP, rhs, op.line, NULL);
-		case LOE_OP_TOKEN : return newASTBinaryOP(lhs, LOE_OP, rhs, op.line, NULL);
-		case GOE_OP_TOKEN : return newASTBinaryOP(lhs, GOE_OP, rhs, op.line, NULL);	
-		case AND_OP_TOKEN : return newASTBinaryOP(lhs, AND_OP, rhs, op.line, NULL);
-		case OR_OP_TOKEN : return newASTBinaryOP(lhs, OR_OP, rhs, op.line, NULL);
-		case PLUS_OP_TOKEN : return newASTBinaryOP(lhs, PLUS_OP, rhs, op.line, NULL);
-		case SUB_OP_TOKEN :  return newASTBinaryOP(lhs, SUB_OP, rhs, op.line, NULL);
-		case MULT_OP_TOKEN :  return newASTBinaryOP(lhs, MULT_OP, rhs, op.line, NULL);
-		case DIV_OP_TOKEN :  return newASTBinaryOP(lhs, DIV_OP, rhs, op.line, NULL);
-		case REM_OP_TOKEN : return newASTBinaryOP(lhs, REM_OP, rhs, op.line, NULL);
-		case EXP_OP_TOKEN: return newASTBinaryOP(lhs, EXP_OP, rhs, op.line, NULL);
-		default:{
-			printf("Unidentified Binary OP");
-			exit(1);
-		}
-	}*/
-	//if op is right associative
-	//if op is left associative
+	Template* temp = searchTemplate(parser->t, op);
+	if(temp==NULL) printf("Invalid OP!\n"),exit(1);
+	if(temp->op.ass) return newASTBinaryOP(lhs, op, split(parser, tokens, temp->op.prec), tokens->tokens->line, NULL);
+	else return newASTBinaryOP(lhs, op, split(parser, tokens, temp->op.prec+1), tokens->tokens->line, NULL);
 }
 
 ASTNode* otherfix(Parser* parser, ASTNode* node, TokenArray* tokens){
-	/*Token token = advance(tokens);
-	switch(token.type){		
-		case LPAREN_OP_TOKEN:return NULL;//callop
-		case FACT_OP_TOKEN:return newASTUnaryOP(node, FACT_OP, token.line, NULL);
-		default: return binaryOP(parser, token, node, tokens);
-	}*/
-	return binaryOP(parser, advance(tokens).value, node, tokens);
+	Token t = advance(tokens);
+	Template* temp = searchTemplate(parser->t, t.value);
+	if(temp != NULL && temp->op.type == POSTFIX_OP) return newASTUnaryOP(split(parser, tokens, temp->op.prec+1), t.value, t.line, NULL);
+	return binaryOP(parser, t.value, node, tokens);
 }
 
 ASTNode* split(Parser* parser, TokenArray* tokens, int prec){

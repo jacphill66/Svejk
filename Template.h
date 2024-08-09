@@ -11,7 +11,13 @@
 typedef struct Template Template;
 
 typedef enum{
-	EXPR_TEMPLATE,
+	EXPR_PART,
+	BLOCK_PART,
+	WORD_PART,
+}TemplatePartType;
+
+typedef enum{
+	PROC_TEMPLATE,
 	OP_TEMPLATE,
 }TemplateType;
 
@@ -24,15 +30,16 @@ typedef enum{
 typedef struct{
 	char* id;
 	Type* t;
-}ExprTemplate;
+	TemplatePartType type;
+}TemplatePart;
 
 typedef struct {
 	char* op;
 	Type* t;
 	int prec;
 	bool ass;
-	Template* expr1;
-	Template* expr2;
+	TemplatePart* expr1;
+	TemplatePart* expr2;
 	OperatorType type;
 } OpTemplate;
 
@@ -41,15 +48,13 @@ typedef struct {
 
 struct Template{
 	union{
-		ExprTemplate expr;
 		OpTemplate op;
 	};
 	TemplateType type;
 };
 
-Template* newExpressionTemplate(char* id, Type* t);
-Template* newOpTemplate(Template* e1, Template* e2, char* op, Type* t, int prec, bool ass, OperatorType type);
-//newOpTemplate(newExpressionTemplate(NULL, newTrivialType(i32)), newExpressionTemplate(NULL, newTrivialType(i32)), "+", newTrivialType(i32));
+TemplatePart* newExpressionPart(char* id, Type* t);
+Template* newOpTemplate(TemplatePart* e1, TemplatePart* e2, char* op, Type* t, int prec, bool ass, OperatorType type);
 void printTemplate(Template* t);
 void freeTemplate(Template* t);
 

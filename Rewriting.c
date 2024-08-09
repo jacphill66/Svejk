@@ -1,5 +1,6 @@
 #include "Rewriting.h"
 
+/*
 void append(String* str, char chr){
 	if(str->length+2 > str->size){
 		str->str = realloc(str->str, str->size*2);
@@ -259,4 +260,4 @@ void freeRewriter(Rewriter* r){
 	freeVariableTable(r->table);
 	freeAST(r->rewrittenAST, false);
 	free(r);
-}
+}*/

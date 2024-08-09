@@ -1,5 +1,5 @@
 #include "Compiling.h"
-
+/*
 Value* resizeValues(Value* values, long size){
 	Value* newValues = (Value*)realloc(values, 2*size*sizeof(Value));
 	if(newValues == NULL){
@@ -150,10 +150,10 @@ void compileASTAssignment(Compiler* c, ASTAssignment* ass){
 void compileASTBlock(Compiler* c, ASTBlock* block){
 	c->scopeDepth++;
 	newScope(c->scopes);
-	/*printf("%d\n", c->scopes->tail->offset);
+	printf("%d\n", c->scopes->tail->offset);
 	exit(1);
 	printf("%d\n", c->scopes->tail->offset);
-	exit(1);*/
+	exit(1);
 	for(int i = 0; i < block->numberOfNodes; i++) compileASTNode(c, &block->nodes[i]);
 	for(int i = 0; i < block->variableCount; i++) emitOP(c, POP_OP);
 	closeScope(c->scopes);
@@ -519,4 +519,4 @@ Program* compile(Compiler* c, AST* ast){
 	//emitOP(c, DUMP_OP);
 	emitOP(c, HALT_OP);
 	return c->prog;
-}
+}*/

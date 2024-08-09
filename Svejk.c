@@ -21,71 +21,45 @@ int main(){
 	//operators
 	int numberOfTokens = 26;
 	char** strings = (char**)malloc(sizeof(char*)*numberOfTokens);
+	
 	addToken(strings, 0, "<");
 	addToken(strings, 1, ">");
 	addToken(strings, 2, "<=");
 	addToken(strings, 3, ">=");
 	addToken(strings, 4, "+");
-	addToken(strings, 5, "+=");
-	addToken(strings, 6, "-");
-	addToken(strings, 7, "-=");
-	addToken(strings, 8, "*");
-	addToken(strings, 9, "*=");
-	addToken(strings, 10, "/");
-	addToken(strings, 11, "/=");
-	addToken(strings, 12, "%");
-	addToken(strings, 13, "%=");
-	addToken(strings, 14, "==");
-	addToken(strings, 15, "[");
-	addToken(strings, 16, "]");
-	addToken(strings, 17, "{");
-	addToken(strings, 18, "}");
-	addToken(strings, 19, "(");
-	addToken(strings, 20, ")");
-	addToken(strings, 21, "^");
-	addToken(strings, 22, ",");
-	addToken(strings, 23, "!");
-	addToken(strings, 24, ":");
-	addToken(strings, 25, "=");
+	addToken(strings, 5, "-");
+	addToken(strings, 6, "*");
+	addToken(strings, 7, "/");
+	addToken(strings, 8, "%");
+	addToken(strings, 9, "==");
+	addToken(strings, 10, "!=");
+	addToken(strings, 11, "!");
+	addToken(strings, 12, "not");
+	addToken(strings, 13, "and");
+	addToken(strings, 14, "or");
+	addToken(strings, 15, "^");
 
-	addString(tokens->trie, strings[0]);
-	addString(tokens->trie, strings[1]);
-	addString(tokens->trie, strings[2]);
-	addString(tokens->trie, strings[3]);
-	addString(tokens->trie, strings[4]);
-	addString(tokens->trie, strings[5]);
-	addString(tokens->trie, strings[6]);
-	addString(tokens->trie, strings[7]);
-	addString(tokens->trie, strings[8]);
-	addString(tokens->trie, strings[9]);
-	addString(tokens->trie, strings[10]);
-	addString(tokens->trie, strings[11]);
-	addString(tokens->trie, strings[12]);
-	addString(tokens->trie, strings[13]);
-	addString(tokens->trie, strings[14]);
-	addString(tokens->trie, strings[15]);
-	addString(tokens->trie, strings[16]);
-	addString(tokens->trie, strings[17]);
-	addString(tokens->trie, strings[18]);
-	addString(tokens->trie, strings[19]);
-	addString(tokens->trie, strings[20]);
-	addString(tokens->trie, strings[21]);
-	addString(tokens->trie, strings[22]);
-	addString(tokens->trie, strings[23]);
-	addString(tokens->trie, strings[24]);
-	addString(tokens->trie, strings[25]);
-	
-	addToken(strings, 0, "+");
-	addToken(strings, 1, "-");
-	addToken(strings, 2, "*");
-	addToken(strings, 3, "^");
-	addToken(strings, 4, "%");
+	int opCount = 16;
+	for(int i = 0; i < 16; i++) addString(tokens->trie, strings[i]);
+	Template** opTemplates = (Template**)malloc(sizeof(Template*)*opCount);
+	for(int i = 0; i < opCount; i++) opTemplates[i] = (Template*)malloc(sizeof(Template));
 
-	Template* t1 = newOpTemplate(newExpressionTemplate(NULL, newTrivialType(I32_TYPE)), newExpressionTemplate(NULL, newTrivialType(I32_TYPE)), strings[0], newTrivialType(I32_TYPE), 0, false, INFIX_OP);
-	Template* t2 = newOpTemplate(newExpressionTemplate(NULL, newTrivialType(I32_TYPE)), newExpressionTemplate(NULL, newTrivialType(I32_TYPE)), strings[1], newTrivialType(I32_TYPE), 0, false, INFIX_OP);
-	Template* t3 = newOpTemplate(newExpressionTemplate(NULL, newTrivialType(I32_TYPE)), newExpressionTemplate(NULL, newTrivialType(I32_TYPE)), strings[2], newTrivialType(I32_TYPE), 1, false, INFIX_OP);
-	Template* t4 = newOpTemplate(newExpressionTemplate(NULL, newTrivialType(I32_TYPE)), newExpressionTemplate(NULL, newTrivialType(I32_TYPE)), strings[3], newTrivialType(I32_TYPE), 0, true, INFIX_OP);	
-	Template* t5 = newOpTemplate(newExpressionTemplate(NULL, newTrivialType(I32_TYPE)), newExpressionTemplate(NULL, newTrivialType(I32_TYPE)), strings[4], newTrivialType(I32_TYPE), 0, false, INFIX_OP);
+	opTemplates[0] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[0], newTrivialType(BOOL_TYPE), 3, false, INFIX_OP);
+	opTemplates[1] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[1], newTrivialType(BOOL_TYPE), 3, false, INFIX_OP);
+	opTemplates[2] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[2], newTrivialType(BOOL_TYPE), 3, false, INFIX_OP);
+	opTemplates[3] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[3], NULL, 3, false, INFIX_OP);	
+	opTemplates[4] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[4], NULL, 4, false, INFIX_OP);
+	opTemplates[5] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[5], NULL, 4, false, INFIX_OP);
+	opTemplates[6] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[6], NULL, 5, false, INFIX_OP);
+	opTemplates[7] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[7], NULL, 5, false, INFIX_OP);
+	opTemplates[8] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[8], NULL, 5, false, INFIX_OP);
+	opTemplates[9] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[9], newTrivialType(BOOL_TYPE), 2, false, INFIX_OP);
+	opTemplates[10] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[10], newTrivialType(BOOL_TYPE), 2, false, INFIX_OP);
+	opTemplates[11] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[3], NULL, 3, false, POSTFIX_OP);
+	opTemplates[12] = newOpTemplate(newExpressionPart(NULL, newTrivialType(BOOL_TYPE)), newExpressionPart(NULL, newTrivialType(BOOL_TYPE)), strings[3], newTrivialType(BOOL_TYPE), 3, false, PREFIX_OP);
+	opTemplates[13] = newOpTemplate(newExpressionPart(NULL, newTrivialType(BOOL_TYPE)), newExpressionPart(NULL, newTrivialType(BOOL_TYPE)), strings[13], newTrivialType(BOOL_TYPE), 6, false, INFIX_OP);
+	opTemplates[14] = newOpTemplate(newExpressionPart(NULL, newTrivialType(BOOL_TYPE)), newExpressionPart(NULL, newTrivialType(BOOL_TYPE)), strings[14], newTrivialType(BOOL_TYPE), 6, false, INFIX_OP);
+	opTemplates[15] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[15], NULL, 6, true, INFIX_OP);
 
 	char* arithmeticTest = "tests/Arithmetic Test.txt";
 	char* stringTest = "tests/string Test.txt";
@@ -102,12 +76,7 @@ int main(){
 	lex(tokens, simpleTest);
 	printTokens(tokens);
 	Parser* parser = newParser();
-	
-	insertTemplate(parser->t, strings[0], -1, t1);
-	insertTemplate(parser->t, strings[1], -1, t2);
-	insertTemplate(parser->t, strings[2], -1, t3);
-	insertTemplate(parser->t, strings[3], -1, t4);
-	insertTemplate(parser->t, strings[4], -1, t5);
+	for(int i = 0; i < opCount; i++) insertTemplate(parser->t, strings[i], -1, opTemplates[i]);
 	
 	//different prefix, postfix, infix trees?
 	//union types
@@ -144,11 +113,21 @@ int main(){
 	printf("completed\n");
 	return 0;
 }
+//maybe sometime be able to do parens through primitive decorators
+
+
 /*
 1.) extract type from type map into its own files
 2.) be able to parse infix, prefix and postfix expressions by tonight
 3.) extract template from tree
 
+expr
+print
+let
+reference
+assignment
+if-else
+for
 */
 
 /*
@@ -232,6 +211,6 @@ easy to parse, hard to analyze
 //template to id function?
 //tomorrow: finish parser, be able to parse everything most of the tests should pass
 //templates for procedures, blocks...
-//
+//maybe keep everything as is, just add syntax extension? idk
 
 

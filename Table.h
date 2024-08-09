@@ -19,5 +19,5 @@ Value get(Table* t, char* key);
 void set(Table* t, char* key, int keySize, Value value);
 void printTable(Table* t);
 void freeTable(Table* t);
-
+unsigned long hash(unsigned char *str);
 #endif
