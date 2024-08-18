@@ -10,14 +10,14 @@ typedef struct{
 	ASTNode* lhs;
 	char* op;
 	ASTNode* rhs;
-	long line;
+	int line;
 	Type* t;
 }ASTBinaryOP;
 
 typedef struct{
 	char* op;
 	ASTNode* opperand;
-	long line;
+	int line;
 	OperatorType type;
 	Type* t;
 }ASTUnaryOP;
@@ -30,26 +30,42 @@ typedef struct {
 typedef struct{
 	//hold args?
 	ASTNode* opperand;	
-	long line;
+	int line;
 	Type* t;
 }ASTCallOP;
 
 typedef struct {
+	ASTNode* nodes;
+	long variableCount;
+	long cappacity;
+	long numberOfNodes;
+	int line;
+	Type* t;
+} ASTBlock;
+
+typedef struct {
+	ASTNode* expr1;
+	ASTNode* expr2;
+	int line;
+	Type* t;
+}ASTWhile;
+
+typedef struct {
 	Value v;
-	long line;
+	int line;
 	Type* t;
 }ASTValue;
 
 typedef struct {
 	char* id;
-	long line;
+	int line;
 	Type* t;
 }ASTID;
 
 typedef struct {
 	char* id;
 	ASTNode* expr;
-	long line;
+	int line;
 	Type* t;
 }ASTAssignment;
 
@@ -57,37 +73,44 @@ typedef struct {
 	char* id;
 	Type* type;
 	ASTNode* expr;
-	long line;
+	int line;
 	Type* t;
 }ASTVariable;
 
 typedef struct {
 	ASTNode* expr;
-	long line;
+	int line;
 	Type* t;
 	bool statement;
 }ASTExpression;
 
 typedef struct{
 	ASTNode* expr;
-	long line;
+	int line;
 	Type* t;
-}ASTPrint;
+}ASTElse;
 
-typedef struct {
-	ASTNode* nodes;
-	long variableCount;
-	long cappacity;
-	long numberOfNodes;
-	long line;
+typedef struct{
+	ASTNode* expr1;
+	ASTNode* expr2;
+	ASTNode* elseExpr;
+	int line;
 	Type* t;
-} ASTBlock;
+}ASTIf;
 
 typedef struct{
 	char* str;
-	long line;
+	int line;
 	Type* t;
 }ASTString;
+
+//remove the rest...
+
+typedef struct{
+	ASTNode* expr;
+	int line;
+	Type* t;
+}ASTPrint;
 
 typedef struct{
 	ASTNode* n1;
@@ -96,30 +119,16 @@ typedef struct{
 	ASTNode* min; 
 	ASTNode* max;
 	ASTNode* b;
-	long line;
+	int line;
 	Type* t;
 }ASTForLoop;
 
 typedef struct{
 	ASTNode* expr;
 	ASTNode* block;
-	long line;
+	int line;
 	Type* t;
 }ASTLoop;
-
-typedef struct{
-	ASTNode* s;
-	long line;
-	Type* t;
-}ASTElse;
-
-typedef struct{
-	ASTNode* expr;
-	ASTNode* s;
-	ASTNode* elseS;
-	long line;
-	Type* t;
-}ASTIf;
 
 typedef enum {
 	//1-4 * a-b
@@ -134,7 +143,7 @@ typedef struct{
 	TableType type;
 	int numberOfNodes;
 	int cappacity;
-	long line;
+	int line;
 	Type* t;
 }ASTTable;
 
@@ -155,6 +164,7 @@ typedef enum{
 	ASTElse_NODE_TYPE,
 	ASTIf_NODE_TYPE,
 	ASTTable_NODE_TYPE,
+	ASTWhile_NODE_TYPE,
 }ASTNodeType;
 
 struct ASTNode {
@@ -173,9 +183,10 @@ struct ASTNode {
 		ASTBlock block;
 		ASTForLoop loop;
 		ASTLoop simpleLoop;
-		ASTIf ifS;
-		ASTElse elseS;
+		ASTIf ifExpr;
+		ASTElse elseExpr;
 		ASTTable table;
+		ASTWhile whileExpr;
 	};
 } ;
 
@@ -187,21 +198,22 @@ typedef struct {
 
 ASTNode* newASTNode();
 
-ASTNode* newASTBinaryOP(ASTNode* lhs, char* op, ASTNode* rhs, long line, Type* t);
+ASTNode* newASTBinaryOP(ASTNode* lhs, char* op, ASTNode* rhs, int line, Type* t);
 
-ASTNode* newASTUnaryOP(ASTNode* opperand, char* op, long line, Type* t);
-ASTNode* newASTValue(Value v, long line, Type* t);
-ASTNode* newASTExpression(ASTNode* expr, bool statement, long line, Type* t);
-ASTNode* newASTID(char* id, long line, Type* t);
-ASTNode* newASTAssignment(char* id, ASTNode* expr, long line, Type* t);
-ASTNode* newASTVariable(char* id, ASTNode* expr, Type* type, long line, Type* t);
-ASTNode* newASTPrint(ASTNode* expr, long line, Type* t);
-ASTNode* newASTString(char* str, long line, Type* t);
-ASTNode* newASTElse(ASTNode* s, long line, Type* t);
-ASTNode* newASTIf(ASTNode* expr, ASTNode* s, ASTNode* elseS, long line, Type* t);
-ASTNode* newASTSimpleLoop(ASTNode* expr, ASTNode* block, long line, Type* t);
-ASTNode* newASTBlock(long line, Type* t);
-ASTNode* newASTForLoop(long line, Type* t);
+ASTNode* newASTUnaryOP(ASTNode* opperand, char* op, int line, Type* t);
+ASTNode* newASTValue(Value v, int line, Type* t);
+ASTNode* newASTExpression(ASTNode* expr, bool statement, int line, Type* t);
+ASTNode* newASTID(char* id, int line, Type* t);
+ASTNode* newASTAssignment(char* id, ASTNode* expr, int line, Type* t);
+ASTNode* newASTVariable(char* id, ASTNode* expr, Type* type, int line, Type* t);
+ASTNode* newASTPrint(ASTNode* expr, int line, Type* t);
+ASTNode* newASTString(char* str, int line, Type* t);
+ASTNode* newASTElse(ASTNode* s, int line, Type* t);
+ASTNode* newASTIf(ASTNode* expr1, ASTNode* expr2, ASTNode* elseExpr, int line, Type* t);
+ASTNode* newASTSimpleLoop(ASTNode* expr, ASTNode* block, int line, Type* t);
+ASTNode* newASTBlock(int line, Type* t);
+ASTNode* newASTForLoop(int line, Type* t);
+ASTNode* newASTWhile(ASTNode* expr, ASTNode* b, int line, Type* t);
 
 //Just parsing
 ASTNode* newASTTable(TableType type, int line, Type* t);

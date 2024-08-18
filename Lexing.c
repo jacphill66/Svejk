@@ -431,7 +431,7 @@ int tokenizeSymbolString(TokenArray* tokenArr, char* text, long textSize, int li
 	symString[*index] = '\0';
 	if(longestIndex > 0) tokenizeSizedSymbolString(tokenArr, text, textSize, lineNumber, longestIndex);
 	else {
-		printf("Error parsing symbol");
+		printf("Error lexingg symbol");
 		exit(1);
 	}
 	free(symString);

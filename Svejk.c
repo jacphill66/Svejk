@@ -34,33 +34,30 @@ int main(){
 	addToken(strings, 9, "==");
 	addToken(strings, 10, "!=");
 	addToken(strings, 11, "!");
-	addToken(strings, 12, "not");
-	addToken(strings, 13, "and");
-	addToken(strings, 14, "or");
-	addToken(strings, 15, "^");
-
-	int opCount = 16;
-	for(int i = 0; i < 16; i++) addString(tokens->trie, strings[i]);
+	addToken(strings, 12, "^");
+	addToken(strings, 13, "{");
+	addToken(strings, 14, "}");
+	addToken(strings, 15, "(");
+	addToken(strings, 16, ")");
+	int opCount = 13;
+	for(int i = 0; i < 17; i++) addString(tokens->trie, strings[i]);
 	Template** opTemplates = (Template**)malloc(sizeof(Template*)*opCount);
 	for(int i = 0; i < opCount; i++) opTemplates[i] = (Template*)malloc(sizeof(Template));
 
 	opTemplates[0] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[0], newTrivialType(BOOL_TYPE), 3, false, INFIX_OP);
 	opTemplates[1] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[1], newTrivialType(BOOL_TYPE), 3, false, INFIX_OP);
 	opTemplates[2] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[2], newTrivialType(BOOL_TYPE), 3, false, INFIX_OP);
-	opTemplates[3] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[3], NULL, 3, false, INFIX_OP);	
+	opTemplates[3] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[3], newTrivialType(BOOL_TYPE), 3, false, INFIX_OP);	
 	opTemplates[4] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[4], NULL, 4, false, INFIX_OP);
 	opTemplates[5] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[5], NULL, 4, false, INFIX_OP);
 	opTemplates[6] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[6], NULL, 5, false, INFIX_OP);
 	opTemplates[7] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[7], NULL, 5, false, INFIX_OP);
-	opTemplates[8] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[8], NULL, 5, false, INFIX_OP);
+	opTemplates[8] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[8], NULL, 5, false, INFIX_OP);	
 	opTemplates[9] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[9], newTrivialType(BOOL_TYPE), 2, false, INFIX_OP);
 	opTemplates[10] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[10], newTrivialType(BOOL_TYPE), 2, false, INFIX_OP);
 	opTemplates[11] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[3], NULL, 3, false, POSTFIX_OP);
-	opTemplates[12] = newOpTemplate(newExpressionPart(NULL, newTrivialType(BOOL_TYPE)), newExpressionPart(NULL, newTrivialType(BOOL_TYPE)), strings[3], newTrivialType(BOOL_TYPE), 3, false, PREFIX_OP);
-	opTemplates[13] = newOpTemplate(newExpressionPart(NULL, newTrivialType(BOOL_TYPE)), newExpressionPart(NULL, newTrivialType(BOOL_TYPE)), strings[13], newTrivialType(BOOL_TYPE), 6, false, INFIX_OP);
-	opTemplates[14] = newOpTemplate(newExpressionPart(NULL, newTrivialType(BOOL_TYPE)), newExpressionPart(NULL, newTrivialType(BOOL_TYPE)), strings[14], newTrivialType(BOOL_TYPE), 6, false, INFIX_OP);
-	opTemplates[15] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[15], NULL, 6, true, INFIX_OP);
-
+	opTemplates[12] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[3], NULL, 3, true, PREFIX_OP);
+	
 	char* arithmeticTest = "tests/Arithmetic Test.txt";
 	char* stringTest = "tests/string Test.txt";
 	char* globalVariableTest = "tests/Global Variables Test.txt";
@@ -77,7 +74,6 @@ int main(){
 	printTokens(tokens);
 	Parser* parser = newParser();
 	for(int i = 0; i < opCount; i++) insertTemplate(parser->t, strings[i], -1, opTemplates[i]);
-	
 	//different prefix, postfix, infix trees?
 	//union types
 	//special types like number
@@ -92,6 +88,8 @@ int main(){
 	parse(parser, tokens);
 	freeTokens(tokens);
 	printAST(parser->ast);
+	freeParser(parser);
+	printf("completed");
 	exit(1);
 	Analyzer* analyzer = newAnalyzer();
 	analyze(analyzer, parser->ast);
@@ -214,3 +212,16 @@ easy to parse, hard to analyze
 //maybe keep everything as is, just add syntax extension? idk
 
 
+/*
+analyzer can do the same thing as the parser. just go through until it finds a match
+*/
+
+
+/*
+Add user defined procedures
+Add operators
+Reintegrate old lexer, parser, ...
+*/
+
+
+//Add more error catching
