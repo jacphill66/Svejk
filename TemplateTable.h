@@ -23,7 +23,7 @@ typedef struct{
 
 TemplateTable* newTemplateTable(int size);
 TMNode* getTemplateTable(TemplateTable* t, char* key);
-void setTemplateTable(TemplateTable* t, char* key, int keySize, Template* temp);
+void setTemplateTable(TemplateTable* t, char* key, Template* temp);
 void printTemplateTable(TemplateTable* t);
 void freeTemplateTable(TemplateTable* t);
 

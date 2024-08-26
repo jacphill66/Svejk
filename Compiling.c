@@ -1,4 +1,26 @@
 #include "Compiling.h"
+int printOP(OPCode op){
+	switch(op){
+		case PLUS_OP: return printf("+");
+		case SUB_OP: return printf("-");
+		case MULT_OP: return printf("*");
+		case DIV_OP: return printf("/");
+		case REM_OP: return printf("%c", '%');
+		case EXP_OP: return printf("^");
+		case FACT_OP: return printf("!");
+		case AND_OP: return printf("and");
+		case OR_OP: return printf("or");
+		case NOT_OP: return printf("not");
+		case UNARY_PLUS_OP: return printf("+");
+		case UNARY_MINUS_OP: return printf("-");
+		case EQUAL_OP: return printf("==");
+		case LESS_OP: return printf("<");
+		case GREATER_OP: return printf(">");
+		case LOE_OP: return printf("<=");
+		case GOE_OP: return printf("==");
+		default: panic("Attempted to Print Invalid OPCode");
+	}
+}
 /*
 Value* resizeValues(Value* values, long size){
 	Value* newValues = (Value*)realloc(values, 2*size*sizeof(Value));

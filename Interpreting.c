@@ -207,7 +207,7 @@ VM* initVM(Program* p){
 	return vm;
 }
 
-void printValue(VM* vm, Value* v){
+void outValue(VM* vm, Value* v){
 	if(v->type == I32_VAL){
 		printf("%d", v->i32);
 	}
@@ -235,7 +235,7 @@ void printValue(VM* vm, Value* v){
 void dumpStack(VM* vm){
 	Value* ptr = vm->stack;
 	while(ptr != vm->stackPtr){
-		printValue(vm, ptr);
+		outValue(vm, ptr);
 		printf("\n");
 		ptr++;
 	}
@@ -345,7 +345,7 @@ void execute(VM* vm){
 				return;
 			}
 			case PRINT_OP:{
-				printValue(vm, vm->stackPtr-1);
+				outValue(vm, vm->stackPtr-1);
 				printf("\n");
 				vm->ip+=1;
 				break;

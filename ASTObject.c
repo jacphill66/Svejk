@@ -1,146 +1,267 @@
 #include "ASTObject.h"
 
-void freeASTNode(ASTNode* node, bool typeFreeing){
-	ASTNodeType type = node->type;
-	switch(node->type){
-		case ASTBinaryOP_NODE_TYPE :{
-			freeASTNode(node->binaryOP.lhs, typeFreeing);
-			freeASTNode(node->binaryOP.rhs, typeFreeing);
-			free(node->binaryOP.lhs);
-			free(node->binaryOP.rhs);
-			if(typeFreeing) freeType(node->binaryOP.t);
-			break;
-		}
-		case ASTString_NODE_TYPE:{
-			if(typeFreeing) freeType(node->str.t);
-			break;
-		}
-		case ASTUnaryOP_NODE_TYPE : {
-			freeASTNode(node->unaryOP.opperand, typeFreeing);
-			free(node->unaryOP.opperand);
-			if(typeFreeing) freeType(node->unaryOP.t);
-			break;
-		}
-		case ASTCallOP_NODE_TYPE:{
-			freeASTNode(node->callOP.opperand, typeFreeing);
-			free(node->callOP.opperand);
-			if(typeFreeing) freeType(node->callOP.t);
-			break;
-		}
-		case ASTID_NODE_TYPE:{
-			if(typeFreeing) freeType(node->id.t);
-			break;
-		}
-		case ASTValue_NODE_TYPE:{
-			if(typeFreeing) freeType(node->value.t);
-			break;
-		}
-		case ASTExpression_NODE_TYPE:{
-			freeASTNode(node->expr.expr, typeFreeing);
-			free(node->expr.expr);
-			if(typeFreeing) freeType(node->expr.t);
-			break;
-		}
-		case ASTWhile_NODE_TYPE:{
-			freeASTNode(node->whileExpr.expr1, typeFreeing);
-			freeASTNode(node->whileExpr.expr2, typeFreeing);
-			if(typeFreeing) freeType(node->expr.t);			
-			break;
-		}
-		case ASTPrint_NODE_TYPE:{
-			freeASTNode(node->print.expr, typeFreeing);
-			free(node->print.expr);
-			if(typeFreeing) freeType(node->print.t);
-			break;
-		}
-		case ASTBlock_NODE_TYPE:{
-			for(long i = 0; i < node->block.numberOfNodes; i++)	freeASTNode(&node->block.nodes[i], typeFreeing);
-			if(typeFreeing) freeType(node->block.t);
-			break;
-		}
-		case ASTVariable_NODE_TYPE:{
-			freeASTNode(node->var.expr, typeFreeing);
-			free(node->var.expr);
-			if(typeFreeing) freeType(node->var.t);
-			break;
-		}
-		case ASTAssignment_NODE_TYPE:{
-			freeASTNode(node->ass.expr, typeFreeing);
-			free(node->ass.expr);
-			if(typeFreeing) freeType(node->ass.t);
-			break;			
-		}
-		case ASTForLoop_NODE_TYPE:{
-			if(node->loop.n1 != NULL) {
-				freeASTNode(node->loop.n1, typeFreeing);
-				free(node->loop.n1);
-			}
-			if(node->loop.n2 != NULL){
-				freeASTNode(node->loop.n2, typeFreeing);
-				free(node->loop.n2);
-			}
-			if(node->loop.n3 != NULL) {
-				freeASTNode(node->loop.n3, typeFreeing);
-				free(node->loop.n3);
-			}
-			if(node->loop.max != NULL) {
-				freeASTNode(node->loop.min, typeFreeing);
-				free(node->loop.min);
-			}
-			if(node->loop.max != NULL) {
-				freeASTNode(node->loop.max, typeFreeing);
-			}
-			freeASTNode(node->loop.b, typeFreeing);
-			if(typeFreeing) freeType(node->loop.t);
-			break;
-		}
-		case ASTIf_NODE_TYPE:{
-			freeASTNode(node->ifExpr.expr1, typeFreeing);
-			free(node->ifExpr.expr1);
-			freeASTNode(node->ifExpr.expr2, typeFreeing);
-			free(node->ifExpr.expr2);
-			if(node->ifExpr.elseExpr != NULL){
-				freeASTNode(node->ifExpr.elseExpr, typeFreeing);
-				free(node->ifExpr.elseExpr);
-			}
-			if(typeFreeing) freeType(node->ifExpr.t);
-			break;
-		}
-		case ASTElse_NODE_TYPE:{
-			freeASTNode(node->elseExpr.expr, typeFreeing);
-			free(node->elseExpr.expr);
-			if(typeFreeing) freeType(node->elseExpr.t);
-			break;
-		}
-		case ASTLoop_NODE_TYPE:{
-			freeASTNode(node->simpleLoop.expr, typeFreeing);
-			free(node->simpleLoop.expr);
-			freeASTNode(node->simpleLoop.block, typeFreeing);
-			free(node->simpleLoop.block);
-			if(typeFreeing) freeType(node->simpleLoop.t);
-			break;
-		}
-		default : {
-			printf("Cannot free node of given type"); 
-			printf("%d", type);
-			exit(1);
-		}
-	}
-	//free(node);
+/* Freeing Functions for ASTObjects */
+
+void freeASTErrorNode(ASTNode* node){
+	free(node);
 }
 
-void freeAST(AST* ast, bool freeType){
-	for(long i = 0; i < ast->numberOfNodes; i++) freeASTNode(&ast->nodes[i], freeType);
+char* freeASTForm(ASTNode* node, bool typeFreeing){
+	if(node->form.nodes == NULL) return newString("Attempting to Free NULL Nodes in a Form");
+	for(int i = 0; i < node->form.size; i++){
+		char* res = freeASTNode(node->form.nodes[i], typeFreeing);
+		if(res != NULL) return res;
+	}
+	if(typeFreeing){
+		char* res = freeType(node->form.t);
+		if(res!=NULL) return res;
+	}
+	char* res = freeTemplate(node->form.temp);
+	if(res != NULL) return res;
+	return NULL;
+}
+
+char* freeASTBinaryOP(ASTNode* node, bool typeFreeing){
+	if(node->binaryOP.lhs != NULL) {
+		char* res = freeASTNode(node->binaryOP.lhs, typeFreeing);
+		free(node->binaryOP.lhs);
+		if(res != NULL) return res;
+	}
+	else return newString("Invalid Freeing of Binary OP");
+	if(node->binaryOP.rhs != NULL){
+		char* res = freeASTNode(node->binaryOP.rhs, typeFreeing);
+		free(node->binaryOP.rhs);
+		if(res != NULL) return res;
+	}
+	else return newString("Invalid Freeing of Binary OP");
+	if(typeFreeing) {
+		char* res = freeType(node->binaryOP.t);
+		if(res != NULL) return res;
+	}
+	if(node->binaryOP.op != NULL) free(node->binaryOP.op);
+	else return newString("Invalid Freeing of Binary OP");
+	return NULL;
+}
+
+char* freeASTString(ASTNode* node, bool typeFreeing){
+	if(typeFreeing) {
+		char* res = freeType(node->str.t);
+		if(res != NULL) return res;
+	}
+	free(node->str.str);
+	return NULL;
+}
+
+char* freeASTNumber(ASTNode* node, bool typeFreeing){
+	if(typeFreeing) {
+		char* res = freeType(node->num.t);
+		if(res != NULL) return res;
+	}
+	if(node->num.num != NULL) free(node->num.num);
+	else return newString("Invalid Freeing of Binary OP");
+}
+
+char* freeASTUnaryOP(ASTNode* node, bool typeFreeing){
+	if(node->unaryOP.opperand != NULL) {
+		char* res = freeASTNode(node->unaryOP.opperand, typeFreeing);
+		free(node->unaryOP.opperand);
+		if(res != NULL) return res;
+	}
+	else return newString("Invalid Freeing of Unary OP");
+	if(typeFreeing) {
+		char* res = freeType(node->unaryOP.t);
+		if(res != NULL) return res;
+	}
+	if(node->unaryOP.op != NULL) free(node->unaryOP.op);
+	else return newString("Invalid Freeing of Unary OP");
+	return NULL;
+}
+
+char* freeASTID(ASTNode* node, bool typeFreeing){
+	if(typeFreeing) {
+		char* res = freeType(node->id.t);
+		if(res != NULL) return res;
+	}	
+	if(node->id.id != NULL) free(node->id.id);
+	else return newString("Invalid Freeing of ID");
+	return NULL;
+}
+
+char* freeASTValue(ASTNode* node, bool typeFreeing){
+	if(typeFreeing) {
+		char* res = freeType(node->value.t);
+		if(res != NULL) return res;
+	}	
+	return NULL;
+}
+
+char* freeASTExpression(ASTNode* node, bool typeFreeing){
+	if(node->expr.expr != NULL){
+		char* res = freeASTNode(node->expr.expr, typeFreeing);
+		free(node->expr.expr);
+		if(res != NULL) return res;
+	}
+	else return newString("Invalid Freeing of Expression");
+	if(typeFreeing) {
+		char* res = freeType(node->expr.t);
+		if(res != NULL) return res;
+	}
+	return NULL;
+}
+
+char* freeASTWhile(ASTNode* node, bool typeFreeing){
+	if(node->whileExpr.expr1 != NULL){
+		char* res = freeASTNode(node->whileExpr.expr1, typeFreeing);
+		free(node->whileExpr.expr1);
+		if(res != NULL) return res;
+	}
+	else return newString("Invalid Freeing of While Loop");
+	if(node->whileExpr.expr2 != NULL) {
+		char* res = freeASTNode(node->whileExpr.expr2, typeFreeing);
+		free(node->whileExpr.expr2);
+		if(res!=NULL) return res;
+	}
+	else return newString("Invalid Freeing of While Loop");
+	if(typeFreeing) {
+		char* res = freeType(node->whileExpr.t);
+		if(res != NULL) return res;
+	}	
+	return NULL;
+}
+
+char* freeASTBlock(ASTNode* node, bool typeFreeing){
+	if(node->block.nodes != NULL){
+		for(long i = 0; i < node->block.numberOfNodes; i++)	{
+			if(&node->block.nodes[i] != NULL){
+				char* res = freeASTNode(&node->block.nodes[i], typeFreeing);
+				if(res != NULL) {
+					free(node->block.nodes);
+					return res;
+				}
+			}
+			else return newString("Invalid Freeing of Block Expression");
+		}
+		free(node->block.nodes);
+	}
+	else return newString("Invalid Freeing of Block Expression");
+	if(typeFreeing) {
+		char* res = freeType(node->block.t);
+		if(res != NULL) return res;
+	}	
+	return NULL;
+}
+
+char* freeASTVariable(ASTNode* node, bool typeFreeing){
+	if(node->var.expr != NULL) {
+		char* res = freeASTNode(node->var.expr, typeFreeing);
+		free(node->var.expr);
+		if(res != NULL) return res;
+	}
+	else return newString("Invalid Freeing of Variable");
+	if(typeFreeing) {
+		char* res = freeType(node->var.t);
+		if(res != NULL) return res;
+	}	 
+	if(node->var.id != NULL) free(node->var.id);
+	else return newString("Invalid Freeing of Variable");
+	return NULL;
+}
+
+char* freeASTAssignment(ASTNode* node, bool typeFreeing){
+	if(node->ass.expr != NULL) {
+		char* res = freeASTNode(node->ass.expr, typeFreeing);
+		free(node->ass.expr);
+		if(res != NULL) return res;
+	}
+	else return newString("Invalid Freeing of Assignment");
+	if(typeFreeing) {
+		char* res = freeType(node->ass.t);
+		if(res != NULL) return res;
+	}	 
+	if(node->ass.id != NULL) free(node->ass.id);
+	else return newString("Invalid Freeing of Assignment");
+	return NULL;	
+}
+
+char* freeASTElse(ASTNode* node, bool typeFreeing){
+	if(node->elseExpr.expr !=  NULL){
+		char* res = freeASTNode(node->elseExpr.expr, typeFreeing);
+		free(node->elseExpr.expr);
+		if(res != NULL) return res;
+	}
+	else return newString("Invalid Freeing of Else");
+	if(typeFreeing) {
+		char* res = freeType(node->elseExpr.t);
+		if(res != NULL) return res;
+	}	
+	return NULL;	
+}
+
+char* freeASTIf(ASTNode* node, bool typeFreeing){
+	if(node->ifExpr.expr1 !=  NULL){
+		char* res = freeASTNode(node->ifExpr.expr1, typeFreeing);
+		free(node->ifExpr.expr1);
+		if(res != NULL) return res;
+	}
+	else return newString("Invalid Freeing of If");
+	if(node->ifExpr.expr2 != NULL){
+		char* res = freeASTNode(node->ifExpr.expr2, typeFreeing);
+		free(node->ifExpr.expr2);
+		if(res != NULL) return res;
+	}
+	else return newString("Invalid Freeing of If");
+	if(node->ifExpr.elseExpr != NULL) {
+		char* res = freeASTNode(node->ifExpr.elseExpr, typeFreeing);
+		free(node->ifExpr.elseExpr);
+		if(res != NULL) return res;
+	}
+	if(typeFreeing) {
+		char* res = freeType(node->ifExpr.t);
+		if(res != NULL) return res;
+	}	
+	return NULL;
+}
+
+char* freeASTNode(ASTNode* node, bool typeFreeing){
+	switch(node->type){
+		case ASTBinaryOP_NODE_TYPE : return freeASTBinaryOP(node, typeFreeing);
+		case ASTString_NODE_TYPE: return freeASTUnaryOP(node, typeFreeing);
+		case ASTUnaryOP_NODE_TYPE : return freeASTUnaryOP(node, typeFreeing);
+		case ASTID_NODE_TYPE: return freeASTID(node, typeFreeing);
+		case ASTValue_NODE_TYPE: return freeASTValue(node, typeFreeing);
+		case ASTExpression_NODE_TYPE: return freeASTExpression(node, typeFreeing);
+		case ASTWhile_NODE_TYPE: return freeASTWhile(node, typeFreeing);
+		case ASTBlock_NODE_TYPE: return freeASTBlock(node, typeFreeing);
+		case ASTVariable_NODE_TYPE: return freeASTVariable(node, typeFreeing);
+		case ASTAssignment_NODE_TYPE: return freeASTAssignment(node, typeFreeing);
+		case ASTIf_NODE_TYPE: return freeASTIf(node, typeFreeing);
+		case ASTElse_NODE_TYPE: return freeASTElse(node, typeFreeing);
+		case ASTNumber_NODE_TYPE: return freeASTNumber(node, typeFreeing);
+		default: return newString("Attempting to Free Node of Invalid Type");
+	}
+}
+
+char* freeAST(AST* ast, bool freeType){
+	for(long i = 0; i < ast->numberOfNodes; i++) {
+		char* res = freeASTNode(&ast->nodes[i], freeType);
+		if(res != NULL) {
+			free(ast);
+			return res;
+		}
+	}
 	free(ast);
 }
 
-ASTNode* newASTNode(){
-	return (ASTNode*)malloc(sizeof(ASTNode));
+/* Initialization Functions for ASTObjects */
+
+ASTNode* newASTNode(ASTNodeType t){
+	ASTNode* n = (ASTNode*)malloc(sizeof(ASTNode));
+	n->type = t;
+	return n;
 }
 
 ASTNode* newASTBinaryOP(ASTNode* lhs, char* op, ASTNode* rhs, int line, Type* t){
-	ASTNode* n = newASTNode();
-	n->type = ASTBinaryOP_NODE_TYPE;
+	ASTNode* n = newASTNode(ASTBinaryOP_NODE_TYPE);
 	n->binaryOP.lhs = lhs;
 	n->binaryOP.op = op;
 	n->binaryOP.rhs = rhs;
@@ -150,8 +271,7 @@ ASTNode* newASTBinaryOP(ASTNode* lhs, char* op, ASTNode* rhs, int line, Type* t)
 }
 
 ASTNode* newASTUnaryOP(ASTNode* opperand, char* op, int line, Type* t){
-	ASTNode* n = newASTNode();
-	n->type = ASTUnaryOP_NODE_TYPE;
+	ASTNode* n = newASTNode(ASTUnaryOP_NODE_TYPE);
 	n->unaryOP.opperand = opperand;
 	n->unaryOP.op = op;
 	n->unaryOP.line = line;
@@ -160,8 +280,7 @@ ASTNode* newASTUnaryOP(ASTNode* opperand, char* op, int line, Type* t){
 }
 
 ASTNode* newASTValue(Value v, int line, Type* t){
-	ASTNode* n = newASTNode();
-	n->type = ASTValue_NODE_TYPE;
+	ASTNode* n = newASTNode(ASTValue_NODE_TYPE);
 	n->value.v = v;
 	n->value.line = line;
 	n->value.t = t;
@@ -169,8 +288,7 @@ ASTNode* newASTValue(Value v, int line, Type* t){
 }
 
 ASTNode* newASTExpression(ASTNode* expr, bool statement, int line, Type* t){
-	ASTNode* n = newASTNode();
-	n->type = ASTExpression_NODE_TYPE;
+	ASTNode* n = newASTNode(ASTExpression_NODE_TYPE);
 	n->expr.expr = expr;
 	n->expr.statement = statement;
 	n->expr.line = line;
@@ -178,10 +296,8 @@ ASTNode* newASTExpression(ASTNode* expr, bool statement, int line, Type* t){
 	return n;
 }
 
-
 ASTNode* newASTID(char* id, int line, Type* t){
-	ASTNode* n = newASTNode();
-	n->type = ASTID_NODE_TYPE;
+	ASTNode* n = newASTNode(ASTID_NODE_TYPE);
 	n->id.id = id;
 	n->id.line = line;
 	n->id.t = t;
@@ -189,8 +305,7 @@ ASTNode* newASTID(char* id, int line, Type* t){
 }
 
 ASTNode* newASTAssignment(char* id, ASTNode* expr, int line, Type* t){
-	ASTNode* n = newASTNode();
-	n->type = ASTAssignment_NODE_TYPE;
+	ASTNode* n = newASTNode(ASTAssignment_NODE_TYPE);
 	n->ass.id = id;
 	n->ass.expr = expr;
 	n->ass.line = line;
@@ -199,8 +314,7 @@ ASTNode* newASTAssignment(char* id, ASTNode* expr, int line, Type* t){
 }
 
 ASTNode* newASTVariable(char* id, ASTNode* expr, Type* type, int line, Type* t){
-	ASTNode* n = newASTNode();
-	n->type = ASTVariable_NODE_TYPE;
+	ASTNode* n = newASTNode(ASTVariable_NODE_TYPE);
 	n->var.id = id;
 	n->var.expr = expr;
 	n->var.type = type;
@@ -210,8 +324,7 @@ ASTNode* newASTVariable(char* id, ASTNode* expr, Type* type, int line, Type* t){
 }
 
 ASTNode* newASTPrint(ASTNode* expr, int line, Type* t){
-	ASTNode* n = newASTNode();
-	n->type = ASTPrint_NODE_TYPE;
+	ASTNode* n = newASTNode(ASTPrint_NODE_TYPE);
 	n->print.expr = expr;
 	n->print.line = line;
 	n->print.t = t;
@@ -219,8 +332,7 @@ ASTNode* newASTPrint(ASTNode* expr, int line, Type* t){
 }
 
 ASTNode* newASTBlock(int line, Type* t){
-	ASTNode* n = newASTNode();
-	n->type = ASTBlock_NODE_TYPE;
+	ASTNode* n = newASTNode(ASTBlock_NODE_TYPE);
 	n->block.nodes = (ASTNode*)malloc(sizeof(ASTNode));
 	n->block.cappacity = 1;
 	n->block.numberOfNodes = 0;
@@ -231,8 +343,7 @@ ASTNode* newASTBlock(int line, Type* t){
 }
 
 ASTNode* newASTString(char* str, int line, Type* t){
-	ASTNode* n = newASTNode();
-	n->type = ASTString_NODE_TYPE;
+	ASTNode* n = newASTNode(ASTString_NODE_TYPE);
 	n->str.str = str;
 	n->str.line = line;
 	n->str.t = t;
@@ -240,8 +351,7 @@ ASTNode* newASTString(char* str, int line, Type* t){
 }
 
 ASTNode* newASTForLoop(int line, Type* t){
-	ASTNode* n = newASTNode();
-	n->type = ASTForLoop_NODE_TYPE;
+	ASTNode* n = newASTNode(ASTForLoop_NODE_TYPE);
 	n->loop.n1 = NULL;
 	n->loop.n2 = NULL;
 	n->loop.n3 = NULL;
@@ -254,8 +364,7 @@ ASTNode* newASTForLoop(int line, Type* t){
 }
 
 ASTNode* newASTSimpleLoop(ASTNode* expr, ASTNode* block, int line, Type* t){
-	ASTNode* n = newASTNode();
-	n->type = ASTLoop_NODE_TYPE;
+	ASTNode* n = newASTNode(ASTLoop_NODE_TYPE);
 	n->simpleLoop.expr = expr;
 	n->simpleLoop.block = block;
 	n->simpleLoop.line = line;
@@ -264,8 +373,7 @@ ASTNode* newASTSimpleLoop(ASTNode* expr, ASTNode* block, int line, Type* t){
 }
 
 ASTNode* newASTElse(ASTNode* expr, int line, Type* t){
-	ASTNode* n = newASTNode();
-	n->type = ASTElse_NODE_TYPE;
+	ASTNode* n = newASTNode(ASTElse_NODE_TYPE);
 	n->elseExpr.expr = expr;
 	n->elseExpr.line = line;
 	n->elseExpr.t = t;
@@ -273,8 +381,7 @@ ASTNode* newASTElse(ASTNode* expr, int line, Type* t){
 }
 
 ASTNode* newASTIf(ASTNode* expr1, ASTNode* expr2, ASTNode* elseExpr, int line, Type* t){
-	ASTNode* n = newASTNode();
-	n->type = ASTIf_NODE_TYPE;
+	ASTNode* n = newASTNode(ASTIf_NODE_TYPE);
 	n->ifExpr.expr1 = expr1;
 	n->ifExpr.expr2 = expr2;
 	n->ifExpr.elseExpr = elseExpr;
@@ -284,8 +391,7 @@ ASTNode* newASTIf(ASTNode* expr1, ASTNode* expr2, ASTNode* elseExpr, int line, T
 }
 
 ASTNode* newASTTable(TableType type, int line, Type* t){
-	ASTNode* n = newASTNode();
-	n->type = ASTTable_NODE_TYPE;
+	ASTNode* n = newASTNode(ASTTable_NODE_TYPE);
 	n->table.nodes = (ASTNode*)malloc(sizeof(ASTNode));
 	n->table.keys = (char**) malloc(sizeof(char*));
 	n->table.type = type;
@@ -297,8 +403,7 @@ ASTNode* newASTTable(TableType type, int line, Type* t){
 }
 
 ASTNode* newASTWhile(ASTNode* expr1, ASTNode* expr2, int line, Type* t){
-	ASTNode* n = newASTNode();
-	n->type = ASTWhile_NODE_TYPE;
+	ASTNode* n = newASTNode(ASTWhile_NODE_TYPE);
 	n->whileExpr.expr1 = expr1;
 	n->whileExpr.expr2 = expr2;
 	n->whileExpr.line = line;
@@ -306,34 +411,271 @@ ASTNode* newASTWhile(ASTNode* expr1, ASTNode* expr2, int line, Type* t){
 	return n;
 }
 
+ASTNode* newASTError(const char* message, int line){
+	ASTNode* errorNode = newASTNode(ASTError_NODE_TYPE);
+	errorNode->error.msg = message;
+	errorNode->error.line = line;
+	return errorNode;
+}
+
+ASTNode* newASTNumber(char* number, bool integer, int line, Type* t){
+	ASTNode* num = newASTNode(ASTNumber_NODE_TYPE);
+	num->num.num = number;
+	num->num.integer = integer;
+	num->num.t = t;
+	return num;
+}
+
+ASTNode* newASTForm(ASTNode** nodes, int size, int line, Type* t, Template* temp){
+	ASTNode* form = newASTNode(ASTForm_NODE_TYPE);
+	form->form.nodes = nodes;
+	form->form.size = size;
+	form->form.t = t;
+	form->form.temp = temp;
+	return form;
+}
+
+/* Emitting Functions */
+
 ASTNode* resizeNodes(ASTNode* nodes, long cappacity){
 	ASTNode* newNodes = (ASTNode*)realloc(nodes, 2*cappacity*sizeof(ASTNode));
-	if(newNodes == NULL){
-		printf("could not resize AST-Nodes!\n");
-		free(nodes);
-		exit(1);
-	}
+	if(newNodes == NULL) return NULL;
 	return newNodes;
 }
 
-void emitNode(ASTNode* node, AST* ast){
+char* emitNode(ASTNode* node, AST* ast){
 	ast->nodes[ast->numberOfNodes] = *node;
 	ast->numberOfNodes++;
 	if(ast->numberOfNodes == ast->cappacity){
 		ast->nodes = resizeNodes(ast->nodes, ast->cappacity);
+		if(ast->nodes == NULL) return newString("Invalid Resizing");
 		ast->cappacity *= 2;
 	}
+	return NULL;
 }
 
-void emitNodeToBlock(ASTNode* node, ASTNode* b){
+char* emitNodeToBlock(ASTNode* node, ASTNode* b){
 	b->block.nodes[b->block.numberOfNodes] = *node;
 	b->block.numberOfNodes++;
 	if(node != NULL && node->type == ASTVariable_NODE_TYPE) b->block.variableCount++;
 	if(b->block.numberOfNodes == b->block.cappacity){
 		b->block.nodes = resizeNodes(b->block.nodes, b->block.cappacity);
+		if(b->block.nodes != NULL) return newString("Invalid Resizing");
 		b->block.cappacity *= 2;
 	}
+	return NULL;
 }
+
+/* Printing Functions */
+
+char* printASTBinaryOP(ASTNode* node){
+	if(node->binaryOP.lhs != NULL) {
+		printf("(");
+		char* res = printASTNode(node->binaryOP.lhs);
+		if(res != NULL) return res;
+	}
+	else return newString("Invalid Printing of Binary OP");
+	if(node->binaryOP.op != NULL) printf("%s", node->binaryOP.op);
+	else newString("Attempting to Print Invalid Operator");
+	if(node->binaryOP.rhs != NULL) {
+		char* res = printASTNode(node->binaryOP.rhs);
+		if(res != NULL) return res;
+		printf(")");
+	}
+	else return newString("Invalid Printing of Binary OP");
+	return NULL;
+}
+
+char* printASTString(ASTNode* node){
+	if(node->str.str != NULL) {
+		printf("str[%s]", node->str.str);
+		return NULL;
+	}
+	return newString("Invalid Printing of String");
+}
+
+char* printASTUnaryOP(ASTNode* node){
+	if(node->unaryOP.opperand != NULL) {
+		printf("(");
+		char* res = printASTNode(node->unaryOP.opperand);
+		printf(")");
+		if(res != NULL) return res;
+	}
+	else return newString("Invalid Printing of Unary OP");
+	if(node->unaryOP.op != NULL) printf("%s", node->unaryOP.op);
+	else return newString("Invalid Printing of Unary OP");
+	return NULL;
+}
+
+char* printASTID(ASTNode* node){
+	if(node->id.id != NULL) printf("ID[%s]", node->id.id);
+	else return newString("Invalid Printing of ID");
+	return NULL;
+}
+
+char* printASTValue(ASTNode* node){
+	char* res = printValue(node->value.v);
+	if(res != NULL) return res;
+	return NULL;
+}
+
+char* printASTExpression(ASTNode* node){
+	if(node->expr.expr != NULL) {
+		printf("Expr[");
+		char* res = printASTNode(node->expr.expr);
+		if(res != NULL) return res;
+		printf("]");
+		return NULL;
+	}
+	else return newString("Invalid Printing of Expression");
+	return NULL;
+}
+
+char* printASTWhile(ASTNode* node){
+	printf("while [");
+	if(node->whileExpr.expr1 != NULL){
+		char* res = printASTNode(node->whileExpr.expr1);
+		if(res != NULL) panic("Invalid Printing of While Loop1");
+	}
+	else panic("Invalid Printing of While Loop2");
+	printf("] [");
+	if(node->whileExpr.expr2 != NULL) {
+		char*res = printASTNode(node->whileExpr.expr2);
+		if(res != NULL) panic("Invalid Printing of While Loop3");
+	}
+	else panic("Invalid Printing of While Loop4");
+	printf("]");
+	return NULL;
+}
+
+char* printASTBlock(ASTNode* node){
+	if(node->block.nodes != NULL){
+		printf("{");
+		for(long i = 0; i < node->block.numberOfNodes; i++)	{
+			if(&node->block.nodes[i] != NULL){
+				char* res = printASTNode(&node->block.nodes[i]);
+				if(res != NULL) return res;
+			}
+			else return newString("Invalid Printing of Block Expression");
+			printf("\n");
+		}
+		printf("}");
+	}
+	else return newString("Invalid Printing of Block Expression");
+	return NULL;
+}
+
+char* printASTVariable(ASTNode* node){
+	if(node->var.id != NULL) printf("let %s: ", node->var.id);
+	else return newString("Invalid Printing of Variable");
+	char* res = printType(node->var.type);
+	if(res != NULL) return res;
+	if(node->var.expr != NULL) {
+		char* res = printASTNode(node->var.expr);
+		if(res != NULL) return res;
+	}
+	else return newString("Invalid Printing of Variable");
+	return NULL;
+}
+
+char* printASTAssignment(ASTNode* node){
+	if(node->ass.expr != NULL){
+		char* res = printASTNode(node->ass.expr);
+		if(res != NULL) return res;
+	}
+	else return newString("Invalid Printing of Assignment");
+	return NULL;
+}
+
+char* printASTElse(ASTNode* node){
+	if(node->elseExpr.expr !=  NULL) {
+		printf("else [");
+		char* res = printASTNode(node->elseExpr.expr);
+		printf("]");
+		if(res != NULL) return res;
+	}
+	else return newString("Invalid Printing of Else");
+	return NULL;
+}
+
+char* printASTIf(ASTNode* node){
+	printf("if [");
+	if(node->ifExpr.expr1 !=  NULL) {
+		char* res = printASTNode(node->ifExpr.expr1);
+		if(res != NULL) return res;
+	}
+	else return newString("Invalid Freeing of If");
+	printf("] [");
+	if(node->ifExpr.expr2 != NULL) {
+		char* res = printASTNode(node->ifExpr.expr2);
+		if(res != NULL) return res;
+	}
+	else return newString("Invalid Freeing of If");
+	printf("] ");
+	if(node->ifExpr.elseExpr != NULL){
+		char* res = printASTNode(node->ifExpr.elseExpr);
+		if(res != NULL) return res;
+	}
+	return NULL;
+}
+
+char* printASTError(ASTNode* node){
+	printf("Parsing Error[%s] on line[%d]", node->error.msg, node->error.line),1;
+	return NULL;
+}
+
+char* printASTNumber(ASTNode* node){
+	if(node->num.integer){
+		if(node->num.num!=NULL) printf("INT[%s]", node->num.num);
+		else return newString("Invalid Ingeger");
+	}
+	else{
+		if(node->num.num!=NULL) printf("FLOAT[%s]", node->num.num);
+		else return newString("Invalid Ingeger");
+	}
+	return NULL;
+}
+
+char* printASTTemplate(ASTNode* node){
+	printf("Form[\n");
+	for(int i = 0; i < node->form.size; i++){
+		char* res = printASTNode(node->form.nodes[i]);
+		if(res != NULL) return res;
+	}
+	printf("]\n");
+	return NULL;
+}
+
+char* printASTNode(ASTNode* node){
+	switch(node->type){
+		case ASTBinaryOP_NODE_TYPE: return printASTBinaryOP(node);
+		case ASTUnaryOP_NODE_TYPE : return printASTUnaryOP(node);
+		case ASTString_NODE_TYPE : return printASTString(node);
+		case ASTID_NODE_TYPE: return printASTID(node);
+		case ASTNumber_NODE_TYPE: return printASTNumber(node);
+		case ASTValue_NODE_TYPE: return printASTValue(node);
+		case ASTExpression_NODE_TYPE: return printASTExpression(node);
+		case ASTVariable_NODE_TYPE: return printASTVariable(node);
+		case ASTAssignment_NODE_TYPE: return printASTAssignment(node);
+		case ASTBlock_NODE_TYPE: return printASTBlock(node);
+		case ASTIf_NODE_TYPE: return printASTIf(node);
+		case ASTElse_NODE_TYPE: return printASTElse(node);
+		case ASTWhile_NODE_TYPE: return printASTWhile(node);
+		case ASTError_NODE_TYPE: return printASTError(node);
+		default : return newString("Attempting to Print Invalid Node Type");
+	}
+}
+
+void printAST(AST* ast){
+	printf("AST:\n");
+	for(long i = 0; i < ast->numberOfNodes; i++){
+		printASTNode(&ast->nodes[i]); printf("\n");
+	}
+	printf("\n");
+}
+
+
+/*
 
 char** resizeKeys(char** keys, long cappacity){
 	char** newKeys = (char**)realloc(keys, 2*cappacity*sizeof(char*));
@@ -357,209 +699,4 @@ void emitNodeToTable(char* key, ASTNode* node, ASTNode* t){
 
 }
 
-void printOP(OPCode op){
-	switch(op){
-		case PLUS_OP:{
-			printf("+");
-			break;
-		}
-		case SUB_OP:{
-			printf("-");
-			break;
-		}
-		case MULT_OP:{
-			printf("*");
-			break;
-		}
-		case DIV_OP:{
-			printf("/");
-			break;
-		}
-		case REM_OP:{
-			printf("%c", '%');
-			break;
-		}
-		case EXP_OP:{
-			printf("^");
-			break;
-		}
-		case FACT_OP:{
-			printf("!");
-			break;
-		}
-		case AND_OP:{
-			printf("and");
-			break;
-		}
-		case OR_OP:{
-			printf("or");
-			break;
-		}
-		case NOT_OP:{
-			printf("not");
-			break;
-		}
-		case UNARY_PLUS_OP:{
-			printf("+");
-			break;
-		}
-		case UNARY_MINUS_OP:{
-			printf("-");
-			break;
-		}
-		case EQUAL_OP:{
-			printf("==");
-			break;
-		}
-		case LESS_OP:{
-			printf("<");
-			break;
-		}
-		case GREATER_OP:{
-			printf(">");
-			break;
-		}
-		case LOE_OP:{
-			printf("<=");
-			break;
-		}
-		case GOE_OP:{
-			printf("==");
-			break;
-		}
-
-	}
-}
-
-void printASTNode(AST* ast, ASTNode* node){
-	ASTNodeType type = node->type;
-	switch(type){
-		case ASTBinaryOP_NODE_TYPE :{
-			printf("(");
-			printASTNode(ast, node->binaryOP.lhs);
-			printf("%s", node->binaryOP.op);
-			printASTNode(ast, node->binaryOP.rhs);
-			printf(")");
-			break;
-		}
-		case ASTUnaryOP_NODE_TYPE : {
-			printf("(");
-			if(node->unaryOP.type == POSTFIX_OP){
-				printASTNode(ast, node->unaryOP.opperand);
-				printf("%s", node->unaryOP.op);
-			}
-			else{
-				printf("%s", node->unaryOP.op);
-				printASTNode(ast, node->unaryOP.opperand);
-			}
-			printf(")");
-			break;
-		}
-		case ASTString_NODE_TYPE : {
-			printf("String[");
-			printf("%s", node->str.str);
-			printf("]");
-			break;
-		}
-		case ASTCallOP_NODE_TYPE:{
-			printASTNode(ast, node->callOP.opperand);
-			printf("()");
-			break;
-		}
-		case ASTID_NODE_TYPE:{
-			printf("ID[%s]", node->id.id);
-			break;
-		}
-		case ASTValue_NODE_TYPE:{
-			switch(node->value.v.type){
-				case I32_VAL :{
-					printf("%d", node->value.v.i32);
-					break;
-				}
-				case F32_VAL:{
-					printf("%f", node->value.v.f32);
-					break;
-				}
-				case BOOL_VAL:{
-					if(node->value.v.boolean){
-						printf("true");
-					}
-					else{ 
-						printf("false");
-					}
-					break;
-				}
-				default : {
-					printf("%d\n", node->type);
-					printf("Cannot print value of given type 1");
-					exit(1);
-				}
-			}
-			break;
-		}
-		case ASTExpression_NODE_TYPE:{
-			printf("Expression[");
-			printASTNode(ast, node->expr.expr);
-			printf("]");
-			break;
-		}
-		case ASTVariable_NODE_TYPE:{
-			printf("let");
-			printf("let %s =", node->var.id);
-			printASTNode(ast, node->var.expr);
-			break;
-		}
-		case ASTAssignment_NODE_TYPE:{
-			printf("%s =", node->ass.id);
-			printASTNode(ast, node->ass.expr);
-			printf("\n");
-			break;
-		}
-		case ASTBlock_NODE_TYPE:{
-			printf("{\n");
-			for(int i = 0; i < node->block.numberOfNodes; i++) {
-				printASTNode(ast, &node->block.nodes[i]);
-				printf("\n");
-			}
-			printf("}\n");
-			break;
-		}
-		case ASTIf_NODE_TYPE:{
-			printf("if [");
-			printASTNode(ast, node->ifExpr.expr1);
-			printf("] [");
-			printASTNode(ast, node->ifExpr.expr2);
-			printf("]");
-			if(node->ifExpr.elseExpr != NULL) printf("[ "); printASTNode(ast, node->ifExpr.elseExpr); printf(" ]");
-			break;
-		}
-		case ASTElse_NODE_TYPE:{
-			printf("else [");
-			printASTNode(ast, node->elseExpr.expr);
-			printf("]");
-			break;
-		}
-		case ASTWhile_NODE_TYPE:{
-			printf("while [");
-			printASTNode(ast, node->whileExpr.expr1);
-			printf("] [");
-			printASTNode(ast, node->whileExpr.expr2);
-			printf("]");
-			break;
-		}
-		default : {
-			printf("Cannot print node of given type\n"); 
-			printf("%d",type);
-			exit(1);
-		}
-	}
-}
-
-void printAST(AST* ast){
-	printf("AST:\n");
-	for(long i = 0; i < ast->numberOfNodes; i++){
-		printASTNode(ast, &ast->nodes[i]); printf("\n");
-	}
-	printf("\n");
-}
-
+*/

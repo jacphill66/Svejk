@@ -1,75 +1,59 @@
 #include "Common.h"
 
-void printType(Type* t){
+char* newString(const char* const_str){
+	char* dynamic_str = malloc(strlen(const_str) + 1);
+	strcpy(dynamic_str, const_str);
+	return dynamic_str;
+}
+
+bool strComp(const char* c1, const char* c2){
+	return strcmp(c1, c2) == 0;
+}
+
+int panic(const char* msg){
+	printf("PANIC:%s", msg);
+	printf("\n");
+	exit(1);
+	return -1;
+}
+
+int printTrivialType(Type* t){
+	switch(t->trivial){
+		case INTERNAL_ERROR_TYPE: return printf("Internal Error Type");
+		case I32_TYPE: return printf("I32 Type");
+		case F32_TYPE: return printf("F32 Type");
+		case STR_TYPE: return printf("Str Type");
+		case BOOL_TYPE: return printf("Bool Type");
+		case INFERRED_TYPE: return printf("Inferred Type");
+		case UNDECLARED_ERROR_TYPE: return printf("Undeclared Error Type");
+		case REDECLARATION_ERROR_TYPE: return printf("Redeclaration Error Type");
+		case TYPE_MISMATCH_ERROR_TYPE: printf("Type Mismatch Error Type");
+		case VOID_TYPE: return printf("Void Error Type");
+		default: panic("Attempting to Print Invalid Trivial Type\n");
+	}
+	return -1;
+}
+
+char* printType(Type* t){
 	switch(t->kind){
-		case Trivial_KIND:{
-			switch(t->trivial){
-				case INTERNAL_ERROR_TYPE:{
-					printf("Internal Error Type");
-					break;
-				}
-				case I32_TYPE:{
-					printf("I32 Type");
-					break;
-				}
-				case F32_TYPE:{
-					printf("F32 Type");
-					break;
-				}
-				case STR_TYPE:{
-					printf("Str Type");
-					break;
-				}
-				case BOOL_TYPE:{
-					printf("Bool Type");
-					break;
-				}
-				case INFERRED_TYPE:{
-					printf("Inferred Type");
-					break;
-				}
-				case UNDECLARED_ERROR_TYPE:{
-					printf("Undeclared Error Type");
-					break;
-				}
-				case REDECLARATION_ERROR_TYPE:{
-					printf("Redeclaration Error Type");
-					break;
-				}
-				case TYPE_MISMATCH_ERROR_TYPE:{
-					printf("Type Mismatch Error Type");
-					break;
-				}
-				case VOID_TYPE:{
-					printf("Void Error Type");
-					break;
-				}
-				default:{
-					printf("Invalid Trivial Type\n");
-					exit(1);
-				}
-			}
-			break;
+		case Trivial_KIND: {
+			printTrivialType(t);
+			return NULL;
 		}
-		default:{
-			printf("Invalid Kind\n");
-			exit(1);
-			break;
+		default: {
+			return newString("Attempting to Print Invalid Type");
 		}
 	}
 }
-void freeType(Type* t){
+
+char* freeType(Type* t){
 	if(t != NULL){
 		switch(t->kind){
-			case Trivial_KIND:{
+			case Trivial_KIND: {
 				free(t);
-				break;
+				return NULL;
 			}
-			default:{
-				printf("Invalid Kind\n");
-				exit(1);
-				break;
-			}
+			default: return newString("Attempted to Free Invalid Kind");
 		}
 	}
 }
@@ -112,4 +96,16 @@ Type* newTrivialType(TrivialType type){
 	t->kind = Trivial_KIND;
 	t->trivial = type;
 	return t;
+}
+
+char* printValue(Value v){
+	switch(v.type){
+		case I32_VAL: return printf("%d", v.i32),NULL;
+		case F32_VAL: return printf("%f", v.f32),NULL;
+		case BOOL_VAL: {
+			if(v.boolean) return printf("true"),NULL;
+			else return printf("false"),NULL;
+		}
+		default: return newString("Attempting to Print Invalid Value Type");
+	}
 }

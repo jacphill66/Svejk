@@ -1,27 +1,29 @@
 #include "Svejk.h"
 
 /*
-Right now:
-	1.) modify analyzer and rewriter to work with changes, before I premptivley add parser features
-	2.) have more consistent newline checking
-	2.) for and if-else should just take one statement each
-	2.) add operators: <<, !, expr[i], 
-	3.) add index assignment: expr[i] =
-	4.) add type parsing method and add
-	5.) add other types of tables
-	5.) add assignment ops
-	5.) add for in statement
-	6.) fix analyzer to ensure the last statement of a block is a value 
+Refactor:
+	TemplateMap
+	TemplateTable
+	Lexer
+	Trie
+	Common
+*/
+
+/*
+Finish:
+	ASTObject
+	Parser
 */
 
 
-int main(){
-	TokenArray* tokens = initTokenArray(tokens);
-	
-	//operators
-	int numberOfTokens = 26;
+void addToken(char** tokens, int tokenCount, const char* token){
+	tokens[tokenCount] = (char*)malloc(sizeof(char)*strlen(token));
+	for(int i = 0; i < strlen(token); i++) tokens[tokenCount][i] = token[i];
+}
+
+char** initStrings(Engine* e){
+	int numberOfTokens = 17;
 	char** strings = (char**)malloc(sizeof(char*)*numberOfTokens);
-	
 	addToken(strings, 0, "<");
 	addToken(strings, 1, ">");
 	addToken(strings, 2, "<=");
@@ -39,11 +41,14 @@ int main(){
 	addToken(strings, 14, "}");
 	addToken(strings, 15, "(");
 	addToken(strings, 16, ")");
+	for(int i = 0; i < numberOfTokens; i++) addString(e->lexer->trie, strings[i]);
+	return strings;
+}
+
+void initOpTemplates(Engine* e, char** strings){
 	int opCount = 13;
-	for(int i = 0; i < 17; i++) addString(tokens->trie, strings[i]);
 	Template** opTemplates = (Template**)malloc(sizeof(Template*)*opCount);
 	for(int i = 0; i < opCount; i++) opTemplates[i] = (Template*)malloc(sizeof(Template));
-
 	opTemplates[0] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[0], newTrivialType(BOOL_TYPE), 3, false, INFIX_OP);
 	opTemplates[1] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[1], newTrivialType(BOOL_TYPE), 3, false, INFIX_OP);
 	opTemplates[2] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[2], newTrivialType(BOOL_TYPE), 3, false, INFIX_OP);
@@ -55,9 +60,46 @@ int main(){
 	opTemplates[8] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[8], NULL, 5, false, INFIX_OP);	
 	opTemplates[9] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[9], newTrivialType(BOOL_TYPE), 2, false, INFIX_OP);
 	opTemplates[10] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[10], newTrivialType(BOOL_TYPE), 2, false, INFIX_OP);
-	opTemplates[11] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[3], NULL, 3, false, POSTFIX_OP);
-	opTemplates[12] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[3], NULL, 3, true, PREFIX_OP);
+	opTemplates[11] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[11], NULL, 3, false, POSTFIX_OP);
+	opTemplates[12] = newOpTemplate(newExpressionPart(NULL, NULL), newExpressionPart(NULL, NULL), strings[12], NULL, 3, true, PREFIX_OP);
+	for(int i = 0; i < opCount; i++) insertTemplate(e->parser->t, strings[i], -1, opTemplates[i]);
+}
+
+void initFormTemplate(Engine* e){
+	int formCount = 2;
+	Template** formTemplates = (Template**)malloc(sizeof(Template*)*formCount);
+	//for(int i = 0; i < formCount; i++) formTemplates[i] = (Template*)malloc(sizeof(Template));
 	
+	int parts1Size = 3;
+	TemplatePart** parts1 = newFormArr(parts1Size);
+	parts1[0] = newWordPart(newString("for"));
+	parts1[1] = newExpressionPart(newString("e1"), newTrivialType(BOOL_TYPE));
+	parts1[2] = newBlockPart(newString("b"), NULL);
+	formTemplates[0] = newFormTemplate(parts1, parts1Size, NULL);
+
+	int parts2Size = 3;
+	TemplatePart** parts2 = newFormArr(parts2Size);
+	parts2[0] = newWordPart(newString("for"));
+	parts2[1] = newExpressionPart(newString("e1"), newTrivialType(I32_TYPE));
+	parts2[2] = newBlockPart(newString("b"), NULL);
+	formTemplates[1] = newFormTemplate(parts2, parts2Size, NULL);
+
+	for(int i = 0; i < formCount; i++) 	printTemplate(formTemplates[i]);
+	
+	exit(1);
+	TemplateTable* forms = newTemplateTable(formCount);
+	for(int i = 0; i < formCount; i++) setTemplateTable(forms, formTemplates[i]->form.parts[0]->id, formTemplates[i]);
+	
+	for(int i = 0; i < formCount; i++) {
+		TMNode* n = getTemplateTable(forms, formTemplates[i]->form.parts[0]->id);
+		printTemplate(n->t);
+	}
+}
+//Fix template tree and template table
+
+
+
+int main(){	
 	char* arithmeticTest = "tests/Arithmetic Test.txt";
 	char* stringTest = "tests/string Test.txt";
 	char* globalVariableTest = "tests/Global Variables Test.txt";
@@ -70,62 +112,25 @@ int main(){
 	char* tableTest = "tests/Just Parsing/Table Test.txt";
 	char* lexerTest = "tests/apples.txt";
 	char* simpleTest = "tests/simple.txt";
-	lex(tokens, simpleTest);
-	printTokens(tokens);
-	Parser* parser = newParser();
-	for(int i = 0; i < opCount; i++) insertTemplate(parser->t, strings[i], -1, opTemplates[i]);
-	//different prefix, postfix, infix trees?
-	//union types
-	//special types like number
-	//something else?
 	
-	/*printTemplate(searchTemplate(parser->t, strings[0]));
-	printTemplate(searchTemplate(parser->t, strings[1]));
-	printTemplate(searchTemplate(parser->t, strings[2]));
-	printTemplate(searchTemplate(parser->t, strings[3]));
-	printTemplate(searchTemplate(parser->t, strings[4]));*/
-
-	parse(parser, tokens);
-	freeTokens(tokens);
-	printAST(parser->ast);
-	freeParser(parser);
-	printf("completed");
-	exit(1);
-	Analyzer* analyzer = newAnalyzer();
-	analyze(analyzer, parser->ast);
-	printErrors(analyzer->a->errors);
-	if(analyzer->a->errors->errorCount > 0) exit(1);
-	Rewriter* r = newRewriter(parser->ast);
-	AST* rewrittenAST = rewrite(r, parser->ast);
-	printAST(rewrittenAST);
-	Compiler* c = newCompiler(rewrittenAST, analyzer->a);
-	//split analysis and analyzer, free doesn't free analyzer
-	compile(c, rewrittenAST);
-	freeAnalyzer(analyzer);
-	freeParser(parser);
-	freeRewriter(r);
-	printProgram(c->prog);
-	VM* vm = initVM(c->prog);
-	execute(vm);
-	freeCompiler(c);
-	printf("completed\n");
+	Engine* e = newEngine();
+	char** strings = initStrings(e);
+	initOpTemplates(e, strings);
+	initFormTemplate(e);
+	printf("Completed\n");
+	//free strings?
+	//run(e, simpleTest, true);
 	return 0;
 }
-//maybe sometime be able to do parens through primitive decorators
-
 
 /*
-1.) extract type from type map into its own files
-2.) be able to parse infix, prefix and postfix expressions by tonight
-3.) extract template from tree
+Tonight Microsoft app, finish parsing up to variables
+Maybe loops and templates
 
-expr
-print
-let
-reference
-assignment
-if-else
-for
+Make Type its own file?
+add parsing for partial application/first class operators
+pass templates
+fix freeing in front end, if there is a crash, everything should be freed
 */
 
 /*
@@ -188,40 +193,3 @@ TODO:
 		For should just take a statement
 		Add rewriting to print (and other operators)
 */
-
-/*
-	should blocks be expressions? should procedures
-	Modify emit node to block to count variables
-	Finish parsing imperative tables
-	Add parsing error to parser
-	for loop should take one statement
-	if statement and loop should create a new scope
-	Clean up rewriter, analyzer 
-	Work on newlines and placement of: ;
-	Add line counter to rewriter 
-*/
-
-/*
-same op different type
-easy to parse, hard to analyze
-*/
-//+i32i32
-//template to id function?
-//tomorrow: finish parser, be able to parse everything most of the tests should pass
-//templates for procedures, blocks...
-//maybe keep everything as is, just add syntax extension? idk
-
-
-/*
-analyzer can do the same thing as the parser. just go through until it finds a match
-*/
-
-
-/*
-Add user defined procedures
-Add operators
-Reintegrate old lexer, parser, ...
-*/
-
-
-//Add more error catching

@@ -9,24 +9,24 @@
 #include "ASTObject.h"
 #include "Template.h"
 #include "TemplateTree.h"
+#include "TemplateTable.h"
 
 typedef struct {
+	int tokenIndex;
 	AST* ast;
 	TemplateRedBlackTree* t;
+	TemplateTable* table;
 } Parser;
 
-ASTNode* newBlock();
-ASTNode* newLoop();
 
 ASTNode* split(Parser* parser, TokenArray* tokens, int prec);
 
 AST* newAST();
 
-Parser* newParser();
+Parser* newParser(int formCount);
 ASTNode* parseBlockOrTable(TokenArray* tokens, Parser* p);
 ASTNode* parseStatement(Parser* parser, TokenArray* tokens);
-void parseLocal(Parser* parser, ASTNode* b, TokenArray* tokens);
-void parse(Parser* parser, TokenArray* tokens);
+ASTNode* parse(Parser* parser, TokenArray* tokens);
 
 void freeParser(Parser* parser);
 

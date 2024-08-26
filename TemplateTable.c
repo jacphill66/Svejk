@@ -1,4 +1,5 @@
 #include "TemplateTable.h"
+
 TemplateTable* newTemplateTable(int length){
 	TemplateTable* t = (TemplateTable*)malloc(sizeof(TemplateTable));
 	t->length = length;
@@ -19,7 +20,7 @@ TMNode* newTMNode(char* key, Template* template){
 	return n;
 }
 
-void setTemplateTable(TemplateTable* t, char* key, int keySize, Template* template){
+void setTemplateTable(TemplateTable* t, char* key, Template* template){
 	TMNode* n = t->elements[hash(key)%t->length];
 	if(n == NULL) t->elements[hash(key)%t->length] = newTMNode(key, template);
 	else{
@@ -38,7 +39,10 @@ void printTMNode(TMNode* n){
 }
 
 void printTemplateTable(TemplateTable* t){
-	for(int i = 0; i < t->length; i++) printTMNode(t->elements[i]);
+	for(int i = 0; i < t->length; i++) {
+		printTMNode(t->elements[i]);
+		printf(" ");
+	}
 }
 
 void freeTMNode(TMNode* n){

@@ -9,15 +9,17 @@
 #include "Common.h"
 
 typedef struct Template Template;
-
+//Should I add all basic forms: var, let, if, if-else, while, ...?
 typedef enum{
 	EXPR_PART,
 	BLOCK_PART,
 	WORD_PART,
+	ID_PART,
+	STATEMENT_PART,
 }TemplatePartType;
 
 typedef enum{
-	PROC_TEMPLATE,
+	FORM_TEMPLATE,
 	OP_TEMPLATE,
 }TemplateType;
 
@@ -41,21 +43,43 @@ typedef struct {
 	TemplatePart* expr1;
 	TemplatePart* expr2;
 	OperatorType type;
+	int line;
 } OpTemplate;
 
-//add more block id, ...
+typedef struct{
+	TemplatePart** parts;
+	int formSize;
+	Type* t;
+	int line;
+} FormTemplate;
+
+typedef struct{
+	const char* msg;
+	int line;
+}ErrorTemplate;
 
 
 struct Template{
 	union{
 		OpTemplate op;
+		FormTemplate form;
 	};
 	TemplateType type;
 };
 
 TemplatePart* newExpressionPart(char* id, Type* t);
+TemplatePart* newBlockPart(char* id, Type*t);
+TemplatePart* newWordPart(char* id);
+TemplatePart* newStatementPart(char* id, Type*t);
+TemplatePart* newIDPart(char* id, Type*t);
+
+TemplatePart** newFormArr(int formSize);
+
 Template* newOpTemplate(TemplatePart* e1, TemplatePart* e2, char* op, Type* t, int prec, bool ass, OperatorType type);
-void printTemplate(Template* t);
-void freeTemplate(Template* t);
+Template* newFormTemplate(TemplatePart** form, int formSize, Type* t);
+
+char* printTemplate(Template* t);
+char* freeTemplate(Template* t);
+
 
 #endif

@@ -47,5 +47,5 @@ Analyzer* newAnalyzer();
 
 TrivialType getTrivialType(Type* t);
 Type* newTrivialType(TrivialType type);
-void freeType(Type* t);
+char* freeType(Type* t);
 #endif

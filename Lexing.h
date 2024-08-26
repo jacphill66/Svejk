@@ -3,13 +3,10 @@
 
 #include "Common.h"
 #include <string.h>
-
 #include <stdlib.h>
 #include <stdbool.h>
-#include <string.h>
 #include <stdio.h>
-
-typedef struct TrieNode TrieNode;
+#include "Trie.h"
 
 typedef enum{
 	INT_TOKEN,
@@ -21,6 +18,7 @@ typedef enum{
 	SEMI_COLON_TOKEN,
 	END_LINE_TOKEN,
 	END_TOKEN,
+	ERROR_TOKEN,
 } TokenType;
 
 typedef struct {
@@ -30,30 +28,30 @@ typedef struct {
 	long line;
 } Token;
 
-struct TrieNode{
-	char letter;
-	bool validEnd;
-	TrieNode* next;
-	//might add prev;
-	TrieNode* child;
-};
-
-typedef struct{
-	TrieNode* root;
-}Trie;
-
 typedef struct {
 	Token* tokens;
-	Trie* trie;
 	long cappacity;
 	long tokenCount;
 } TokenArray;
 
-TokenArray* initTokenArray();
-void lex(TokenArray* tokenArr, char* path);
-void printTokens(TokenArray* arr);
-void freeTokens(TokenArray* tokens);
-void printToken(Token* t);
-void addString(Trie* t, char* str);
-void addToken(char** tokens, int tokenCount, const char* token);
+typedef struct{
+	TokenArray* tokens;
+	Trie* trie;
+	bool invalidRead;
+}Lexer;
+
+/*Initialization */
+Token newToken(TokenType type, char* value, long size, long lineNumber);
+Lexer* newLexer();
+
+/*Freeing*/
+char* freeLexer(Lexer* l);
+
+/*Printing*/
+char* printToken(Token* t);
+char* printTokens(TokenArray* arr);
+
+/* Lexes a text file to tokens*/
+char* lex(Lexer* l, char* path);
+
 #endif

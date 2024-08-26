@@ -7,6 +7,13 @@
 typedef struct ASTNode ASTNode;
 
 typedef struct{
+	char* num;
+	bool integer;
+	int line;
+	Type* t;
+}ASTNumber;
+
+typedef struct{
 	ASTNode* lhs;
 	char* op;
 	ASTNode* rhs;
@@ -147,6 +154,19 @@ typedef struct{
 	Type* t;
 }ASTTable;
 
+typedef struct{
+	const char* msg;
+	int line;
+}ASTError;
+
+typedef struct{
+	ASTNode** nodes;
+	int size;
+	int line;
+	Type* t;
+	Template* temp;
+}ASTForm;
+
 typedef enum{
 	ASTBinaryOP_NODE_TYPE,
 	ASTUnaryOP_NODE_TYPE,
@@ -165,6 +185,9 @@ typedef enum{
 	ASTIf_NODE_TYPE,
 	ASTTable_NODE_TYPE,
 	ASTWhile_NODE_TYPE,
+	ASTError_NODE_TYPE,
+	ASTNumber_NODE_TYPE,
+	ASTForm_NODE_TYPE,
 }ASTNodeType;
 
 struct ASTNode {
@@ -174,6 +197,7 @@ struct ASTNode {
 		ASTUnaryOP unaryOP;
 		ASTCallOP callOP;
 		ASTValue value;
+		ASTNumber num;
 		ASTString str;
 		ASTExpression expr;
 		ASTPrint print;
@@ -187,6 +211,8 @@ struct ASTNode {
 		ASTElse elseExpr;
 		ASTTable table;
 		ASTWhile whileExpr;
+		ASTError error;
+		ASTForm form;
 	};
 } ;
 
@@ -196,7 +222,7 @@ typedef struct {
 	long numberOfNodes;
 } AST;
 
-ASTNode* newASTNode();
+ASTNode* newASTNode(ASTNodeType t);
 
 ASTNode* newASTBinaryOP(ASTNode* lhs, char* op, ASTNode* rhs, int line, Type* t);
 
@@ -214,18 +240,21 @@ ASTNode* newASTSimpleLoop(ASTNode* expr, ASTNode* block, int line, Type* t);
 ASTNode* newASTBlock(int line, Type* t);
 ASTNode* newASTForLoop(int line, Type* t);
 ASTNode* newASTWhile(ASTNode* expr, ASTNode* b, int line, Type* t);
+ASTNode* newASTError(const char* msg, int line);
+ASTNode* newASTNumber(char* num, bool integer, int line, Type* t);
 
+void freeASTError(ASTNode* error);
 //Just parsing
 ASTNode* newASTTable(TableType type, int line, Type* t);
 
-void freeASTNode(ASTNode* node, bool freeType);
-void freeAST(AST* ast, bool freeType);
+char* freeASTNode(ASTNode* node, bool freeType);
+char* freeAST(AST* ast, bool freeType);
 
-void printASTNode(AST* ast, ASTNode* node);
+char* printASTNode(ASTNode* node);
 void printAST(AST* ast);
 
-void emitNodeToBlock(ASTNode* node, ASTNode* b);
+char* emitNodeToBlock(ASTNode* node, ASTNode* b);
 void emitNodeToTable(char* key, ASTNode* node, ASTNode* t);
-void emitNode(ASTNode* node, AST* ast);
+char* emitNode(ASTNode* node, AST* ast);
 
 #endif
